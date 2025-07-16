@@ -591,26 +591,26 @@ def analysis_template(args, default_parameters):
             'gpu_per_server': 1,
             'psw_switch_num': 0,  
             'nics_per_aswitch': 64,  # 每个交换机有64个网卡连接
-            'bandwidth': '400Gbps',  # 假设带宽为400Gbps
+            'bandwidth': '25Gbps',  # 假设带宽为400Gbps
             'nv_switch_per_server':1,
-            'latency':'0s'
+            'latency': '0.000001ms'
         })
         parameters.update({
             'rail_optimized': False,  # 假设没有RAIL优化
             'dual_ToR': False,  # 没有双ToR
             'dual_plane': False,  # 不是双平面配置
         })
-        if args.dp:  # 启用 dual_plane
+        if args.dt:  # 如果启用了 dual_ToR
             default_parameters.update({
-                'nics_per_aswitch': 64,        # 每个平面仍然有完整的连接（两个平面并行）
-                'asw_switch_num': 2,           # 每个平面一个交换机，共两个
-                'bandwidth': '25Gbps',         # 单平面带宽不变，但双平面总带宽翻倍
+                'nics_per_aswitch': 32,  # 双ToR时每个交换机有32个网卡
+                'bandwidth': '400Gbps',  # 提升带宽
             })
             parameters.update({
-                'rail_optimized': True,       # RAIL 优化可选
-                'dual_ToR': False,             # 此处不涉及 ToR 层（SuperPod 是扁平拓扑）
-                'dual_plane': True,            # 标记为双平面
+                'rail_optimized': False,  # 启用RAIL优化
+                'dual_ToR': False,  # 启用双ToR
+                'dual_plane': False,  # 保持单平面
             })
+
     
     parameter_keys = [
         'gpu', 'error_rate', 'gpu_per_server', 'gpu_type', 'nv_switch_per_server',

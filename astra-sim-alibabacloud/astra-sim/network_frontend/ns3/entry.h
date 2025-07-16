@@ -309,13 +309,15 @@ void qp_finish(FILE *fout, Ptr<RdmaQueuePair> q) {
           q->sport, q->dport, q->m_size, q->startTime.GetTimeStep(),
           (Simulator::Now() - q->startTime).GetTimeStep(), standalone_fct);
   fflush(fout);
-
+  static int finshedNum=0;
   AstraSim::ncclFlowTag flowTag;
   uint64_t notify_size;
   {
     #ifdef NS3_MTP
     MtpInterface::explicitCriticalSection cs;
     #endif
+    finshedNum++;
+    printf("%d/8064 (%f) qp finished\n",finshedNum,finshedNum/80.64);
     Ptr<Node> dstNode = n.Get(did);
     Ptr<RdmaDriver> rdma = dstNode->GetObject<RdmaDriver>();
     rdma->m_rdma->DeleteRxQp(q->sip.Get(), q->m_pg, q->sport);

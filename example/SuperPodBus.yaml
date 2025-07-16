@@ -1,0 +1,18 @@
+test
+TP:
+allreduce,: null
+allgather,: null
+reducescatter,: null
+alltoall,: null
+DP:
+allreduce,: 25
+allgather,: 25
+reducescatter,: 25
+alltoall,: null
+EP:
+allreduce,: null
+allgather,: null
+reducescatter,: null
+alltoall,: null
+PP:
+busbw: null

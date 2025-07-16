@@ -1,0 +1,1 @@
+nodes gpu_per_server nv_switch_num switch_nodes-nv_switch_num linksNum gpu_type

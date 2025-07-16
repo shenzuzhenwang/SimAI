@@ -958,7 +958,9 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>),void (*send_fini
       if (n.Get(j)->GetNodeType() != 0)
         continue;
       uint64_t delay = pairDelay[n.Get(i)][n.Get(j)];
+      printf("Delay:%d\n",delay);
       uint64_t txDelay = pairTxDelay[n.Get(i)][n.Get(j)];
+      printf("TxDelay:%d\n",txDelay);
       uint64_t rtt = delay * 2 + txDelay;
       uint64_t bw = pairBw[i][j];
       uint64_t bdp = rtt * bw / 1000000000 / 8;

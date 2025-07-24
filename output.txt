@@ -1,0 +1,243 @@
+Delay:0
+TxDelay:0
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:0
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:0
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:360
+Delay:0
+TxDelay:0
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:187
+Delay:0
+TxDelay:0
+maxRtt=360 maxBdp=18000
+Running Simulation.
+The final active chunks per dimension 1 after allocating to queues is: 1
+ring of node 0, id: 0 dimension: local total nodes in ring: 9 index in ring: 0 offset: 1total nodes in ring: 9
+ring of node 0, id: 0 dimension: local total nodes in ring: 9 index in ring: 0 offset: 1total nodes in ring: 9
+ring of node 0, id: 0 dimension: local total nodes in ring: 9 index in ring: 0 offset: 1total nodes in ring: 9
+ring of node 0, id: 0 dimension: local total nodes in ring: 9 index in ring: 0 offset: 1total nodes in ring: 9
+total nodes: 9
+Success in opening workload file
+model_parallel_NPU_group is 1
+checkpoints layers are: 
+layers initiating fwd_in_bckwd are: 
+pp_commize:0
+id: embedding_layer , depen: -1 , wg_comp_time: 1
+type: HYBRID_TRANSFORMER_FWD_IN_BCKWD ,num passes: 1 ,lines: 1 compute scale: 1 ,comm scale: 1
+stat path: ./ncclFlowModel_ ,total rows: 1 ,stat row: 0
+CSV path and filename: ./ncclFlowModel_detailed_9.csv
+CSV path and filename: ./ncclFlowModel_EndToEnd.csv
+gen_local_ring(rank:0,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:0,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:0,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:1,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:1,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:2,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:2,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:3,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:3,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:4,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:4,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:5,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:5,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:6,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:6,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:7,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:7,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:8,GroupType:1)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+gen_local_ring(rank:8,GroupType:4)
+GroupInfo:
+  group_index: 0
+  type: 1
+  nNodes: 5
+  nRanks: 5
+  Ranks: 0 1 2 3 4 
+  NVSwitchs: 5 6 7 8 -1185837056 
+  Dpus: 
+info: no forward pass collective for layer: embedding_layer
+simulator run 
+info: no input grad collective for layer: embedding_layer
+chunk size is: 175000000 , size is: 175000000 , layer_num is: 0 , node: 0

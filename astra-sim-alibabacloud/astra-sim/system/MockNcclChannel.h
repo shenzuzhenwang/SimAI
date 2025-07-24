@@ -59,6 +59,30 @@ namespace MockNccl {
           chunk_count(_chunk_count),
           conn_type(_conn_type) {}
     ~SingleFlow(){};
+    void show(){
+            std::cout << "SingleFlow constructed:" << std::endl;
+            std::cout << "  flow_id: " << flow_id << std::endl;
+            std::cout << "  src: " << src << std::endl;
+            std::cout << "  dest: " << dest << std::endl;
+            std::cout << "  flow_size: " << flow_size << std::endl;
+
+            std::cout << "  prev: [";
+            for (int v : prev) std::cout << v << " ";
+            std::cout <<"]"<< std::endl;
+
+            std::cout << "  parent_flow_id: [";
+            for (int v : parent_flow_id) std::cout << v << " ";
+            std::cout <<"]"<< std::endl;
+
+            std::cout << "  child_flow_id: [";
+            for (int v : child_flow_id) std::cout << v << " ";
+            std::cout <<"]"<< std::endl;
+
+            std::cout << "  channel_id: " << channel_id << std::endl;
+            std::cout << "  chunk_id: " << chunk_id << std::endl;
+            std::cout << "  chunk_count: " << chunk_count << std::endl;
+            std::cout << "  conn_type: " << conn_type << std::endl;
+    }
   };
 
   enum class State{
@@ -105,14 +129,17 @@ namespace MockNccl {
     MockNccl::MockNcclGroup* GlobalGroup;
     GroupType type; 
     int rank;
+    GroupInfo gp_info;
     std::map<int,std::map<int,std::vector<int>>> ringchannels;
     TreeChannels treechannels; 
     TreeChannels nvlschannels;
     NVLStreechannels nvlstreechannels;
+    TreeChannels dpuchannels;
 
     std::map<int,std::map<int,std::vector<int>>> get_rings();
     MockNccl::TreeChannels get_treechannels();
     MockNccl::TreeChannels get_nvls_channels();
+    MockNccl::TreeChannels get_dpuchannels();
     MockNccl::NVLStreechannels get_nvls_tree_channels();
     std::shared_ptr<void> get_flow_model(uint64_t data_size,AstraSim::ComType collective_type,int layer_num,State loopstate);
     struct ncclInfo* get_algo_proto_info(uint64_t data_size,AstraSim::ComType collective_type);

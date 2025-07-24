@@ -125,7 +125,9 @@ int main(int argc,char *argv[]) {
     param->net_work_param.gpu_type,
     param->gpus,
     param->net_work_param.NVswitchs,
-    param->net_work_param.gpus_per_server
+    param->net_work_param.gpus_per_server,
+    vector<int>(),
+    0
   );
   systems->nvswitch_id = node2nvswitch[0];
   systems->num_gpus = using_num_gpus - param->net_work_param.nvswitch_num;

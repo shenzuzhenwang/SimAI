@@ -92,6 +92,8 @@ class Sys : public Callable {
   int nvswitch_id; 
   int num_gpus;
   std::vector<int>NVSwitchs; 
+  std::vector<int> Dpus;
+  int dpuPerSwitch;
   int ngpus_per_node;
   GPUType gpu_type;
 
@@ -246,7 +248,9 @@ class Sys : public Callable {
       GPUType _gpu_type,
       std::vector<int> _all_gpus,
       std::vector<int> _NVSwitchs,
-      int _ngpus_per_node);
+      int _ngpus_per_node,
+      std::vector<int> _Dpus,
+      int _dpu_per_sw);
 
   void iterate();
   bool initialize_sys(std::string name);

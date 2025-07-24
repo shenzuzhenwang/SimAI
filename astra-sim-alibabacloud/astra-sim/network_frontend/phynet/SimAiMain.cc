@@ -160,7 +160,9 @@ int main(int argc,char *argv[]){
     user_param.gpu_type,
     {user_param.gpus},
     NVswitchs,
-    user_param.gpus_per_server
+    user_param.gpus_per_server,
+    std::vector<int>(),
+    0
   );
   global_sys->nvswitch_id = node2nvswitch[local_rank];
   global_sys->num_gpus = user_param.gpus;

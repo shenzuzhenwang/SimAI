@@ -38,7 +38,7 @@ function cleanup_result {
 function compile_astrasim {
     cd "${BUILD_DIR}" || exit
     cmake ..
-    make
+    make VERBOSE=1
 }
 
 function compile {
@@ -53,8 +53,8 @@ function compile {
     cp -r "${ASTRA_SIM_DIR}" "${NS3_APPLICATION}"/
     cd "${NS3_DIR}/simulation"
     CC='gcc' CXX='g++' 
-    ./ns3 configure -d debug --enable-mtp
-    ./ns3 build
+    ./ns3 configure -d debug --enable-mtp 
+    ./ns3 build 
 
     cd "${SCRIPT_DIR:?}"
 }

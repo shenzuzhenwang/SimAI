@@ -15,6 +15,6 @@
 #include "MockNcclLog.h"
 
 MockNcclLog* MockNcclLog::instance = nullptr;
-NcclLogLevel MockNcclLog::logLevel = NcclLogLevel::INFO;
+NcclLogLevel MockNcclLog::logLevel = NcclLogLevel::DEBUG;
 std::mutex MockNcclLog::mtx;
 std::string MockNcclLog::LogName = "";

@@ -23,7 +23,7 @@
 #include "astra-sim/system/MockNcclLog.h"
 using namespace std;
 namespace MockNccl {
-  MockNcclGroup::MockNcclGroup(int _ngpus,int _gpus_per_nodes,int _TP_size,int _DP_size,int _PP_size,int _EP_size,int _DP_EP_size,std::vector<int>_NVSwitch,GPUType _gpu_type):g_flow_id(0),gpu_type(_gpu_type){
+  MockNcclGroup::MockNcclGroup(int _ngpus,int _gpus_per_nodes,int _TP_size,int _DP_size,int _PP_size,int _EP_size,int _DP_EP_size,std::vector<int>_NVSwitch,GPUType _gpu_type,std::vector<int> _Dpus,int _dpu_per_sw):g_flow_id(0),gpu_type(_gpu_type){
     /*init groups
     */
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
@@ -86,7 +86,7 @@ namespace MockNccl {
           NVSwitchs.push_back(_NVSwitch[idx]);
           GroupIndex[std::make_pair(_NVSwitch[idx],DP)] = all_group_idx;
         }
-        AllGroups[all_group_idx]=GroupInfo(all_group_idx,DP,DPnodes.size(),_DP_size,ranks,NVSwitchs);
+        AllGroups[all_group_idx]=GroupInfo(all_group_idx,DP,DPnodes.size(),_DP_size,ranks,NVSwitchs,_Dpus,_dpu_per_sw);
         all_group_idx ++;
       }
     }
@@ -223,6 +223,8 @@ namespace MockNccl {
       }
       localrings[i] = vec;
     }
+    // printf("gen_local_ring(rank:%d,GroupType:%d)\n",rank,type);
+    // gp_info.show();
     return localrings;
   }
 
@@ -662,6 +664,8 @@ namespace MockNccl {
   std::map<int,std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceFlowModels(GroupType type , int rank,uint64_t data_size){
     ncclInfo* ncc_info = get_algo_proto_info(type,rank,AstraSim::ComType::All_Reduce,data_size);
     switch (ncc_info->algorithm) {
+      case NCCL_ALGO_DPU:
+        return genAllReduceDpuFlowModels(type,rank,data_size);
       case NCCL_ALGO_TREE:
       case NCCL_ALGO_RING:
         return genAllReduceRingFlowModels(type, rank, data_size);
@@ -1044,6 +1048,109 @@ namespace MockNccl {
     return result;
   }
 
+  void DataSlice(uint64_t data_size,uint64_t nDpu){
+    uint64_t agg_grain=1*1024*1024;
+    uint64_t flowNumPerRank=(data_size+agg_grain-1)/agg_grain;
+    
+  }
+
+  FlowModels MockNcclGroup::genAllReduceOneDpuFlowModels(GroupInfo gp_info,uint64_t data_size,uint64_t dpuId){
+    int nranks=gp_info.nRanks;
+    uint64_t agg_grain=1*1024*1024;   //1M per flow
+    uint64_t flowNumPerGpu=(data_size+agg_grain-1)/agg_grain;
+    FlowModels result = {};
+
+    // gpu0                       gpu1                                                        gpui
+    // 0 -- flowNumPerGpu-1 ,    1*flowNumPerGpu+0 -- 1*flowNumPerGpu+flowNumPerGpu-1     i*fnPerGpu -- i*fnPerGpu+fnPerGpu-1
+
+    //        dpu
+    //  chunk0 
+    // 
+
+    vector<int> _prev;
+    for(int gpuId=0;gpuId<nranks;gpuId++){
+      _prev.push_back(gpuId);
+    }
+    for(int chunk=0;chunk<flowNumPerGpu;chunk++){
+      vector<int> parentFlowIds;
+      vector<int> childFlowIds;
+      for(int flowId=g_flow_id;flowId<g_flow_id+nranks;flowId++){
+        parentFlowIds.push_back(flowId);
+        childFlowIds.push_back(flowId+nranks);
+      }
+      for(int gpuId=0;gpuId<nranks;gpuId++){
+        auto send_flow=SingleFlow(
+                g_flow_id,
+                gpuId,
+                dpuId,  // DPU编号
+                agg_grain,
+                {(int)dpuId},  // 无前驱
+                {},
+                childFlowIds,  // 下一个flow
+                /*channel_id*/ 0,
+                /*chunk_id*/ chunk,
+                flowNumPerGpu,
+                "DPU");
+        result[std::make_pair(0, g_flow_id)]=send_flow;
+        g_flow_id++;
+      }
+      for(int gpuId=0;gpuId<nranks;gpuId++){
+        auto recv_flow=SingleFlow(
+                g_flow_id,
+                dpuId,
+                gpuId,  // DPU编号
+                agg_grain,
+                _prev,  // 无前驱
+                parentFlowIds,
+                {},  // 下一个flow是recv
+                /*channel_id*/ 0,
+                /*chunk_id*/ chunk,
+                flowNumPerGpu,
+                "DPU");
+        result[std::make_pair(0, g_flow_id)]=recv_flow;
+        g_flow_id++;
+      }
+    }
+    return result;
+  }
+
+  std::map<int,std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceDpuFlowModels(GroupType type ,int rank,uint64_t data_size){
+    FlowModels result={};
+    std::map<int,FlowModels>rank2flowmodels;
+    std::map<int,std::shared_ptr<FlowModels>>rank2pflowmodels;
+
+    int nranks;
+    GroupInfo gp_info;
+    int gp_idx;
+
+
+    MockNcclLog* NcclLog = MockNcclLog::getInstance();
+    if(GroupIndex.count(std::make_pair(rank,type))==0){
+      NcclLog->writeLog(NcclLogLevel::ERROR,"There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.");
+      return {};
+    } else {
+      gp_idx = GroupIndex[std::make_pair(rank,type)];
+      gp_info = AllGroups[gp_idx];
+    }
+    result = genAllReduceOneDpuFlowModels(gp_info,data_size,gp_info.Dpus[0]);
+    
+    for(auto [k,v]:result){
+      v.show();
+    }
+    rank2flowmodels.clear();
+    for(auto flow_models_it = result.begin();flow_models_it!=result.end();flow_models_it++){
+      int src = flow_models_it->second.src;
+      int dst = flow_models_it->second.dest;
+      rank2flowmodels[src][std::make_pair(flow_models_it->first.first,flow_models_it->first.second)]=flow_models_it->second;
+      rank2flowmodels[dst][std::make_pair(flow_models_it->first.first,flow_models_it->first.second)]=flow_models_it->second;
+    }
+    for(auto it = rank2flowmodels.begin();it!=rank2flowmodels.end();it++){
+      rank2pflowmodels[it->first] = std::make_shared<FlowModels>(it->second);
+    }
+
+    return rank2pflowmodels;
+  }
+
   std::map<int,std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceRingFlowModels(GroupType type , int rank,uint64_t data_size){
     FlowModels result = {};
     std::map<int,FlowModels>rank2flowmodels;
@@ -1058,6 +1165,8 @@ namespace MockNccl {
     int gp_idx;
     RingChannels ringchannels;
     MockNcclLog* NcclLog = MockNcclLog::getInstance();
+    // cout<<"------------------ genAllReduceRingFlowModels(rank:,data_size:)"
+    printf("------------------ genAllReduceRingFlowModels(rank:%d,data_size:%ld)\n",rank,data_size);
     if(GroupIndex.count(std::make_pair(rank,type))==0){
       NcclLog->writeLog(NcclLogLevel::ERROR,"There is no corresponding group info and group ring channel, resulting in an error in generating the flow model.");
       return {};
@@ -1410,6 +1519,26 @@ namespace MockNccl {
     }
     for(auto it = rank2flowmodels.begin();it!=rank2flowmodels.end();it++){
       rank2pflowmodels[it->first] = std::make_shared<FlowModels>(it->second);
+    }
+
+    for (const auto& rank_entry : rank2pflowmodels) {
+        int rank = rank_entry.first;
+        const std::shared_ptr<FlowModels>& flow_models_ptr = rank_entry.second;
+
+        std::cout << "Rank: " << rank << std::endl;
+
+        if (!flow_models_ptr) {
+            std::cout << "  (empty or null FlowModels)" << std::endl;
+            continue;
+        }
+
+        for (auto& flow_entry : *flow_models_ptr) {
+            const std::pair<int, int>& flow_key = flow_entry.first;
+            auto& flow = flow_entry.second;
+
+            std::cout << "  Flow (" << flow_key.first << ", " << flow_key.second << "):" << std::endl;
+            flow.show();  // 调用成员函数打印内容
+        }
     }
     return rank2pflowmodels;
   }
@@ -1851,6 +1980,10 @@ namespace MockNccl {
     }
   }
 
+  // TreeChannels MockNcclGroup::getdpuchannels(int rank, GroupType type){
+  //   return TreeChannels();
+  // }
+
   TreeChannels MockNcclGroup::gettreechannels(int rank, GroupType type){
     TreeChannels treechannels;
     std::map<int,std::vector<int>>localrings;
@@ -2084,7 +2217,9 @@ namespace MockNccl {
             } else{
               info->algorithm = NCCL_ALGO_RING;
             }
-          } else {
+          } else if(gp_info.dpuPerSw>0){
+            info->algorithm=NCCL_ALGO_DPU;
+          }else {
             info->algorithm = NCCL_ALGO_RING;
           }
           break;

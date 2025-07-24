@@ -103,12 +103,40 @@ namespace MockNccl {
     GroupType type;
     int nNodes;
     int nRanks;
+    int dpuPerSw;
     std::vector<int> Ranks;
     std::vector<int> NVSwitchs; 
+    std::vector<int> Dpus;
     GroupInfo(){}
-    GroupInfo(int _group_index, GroupType _type, int _nNodes, int _nRanks, std::vector<int> _Ranks,std::vector<int>_NVSwitchs)
-        : group_index(_group_index),type(_type), nNodes(_nNodes), nRanks(_nRanks), Ranks(_Ranks),NVSwitchs(_NVSwitchs) {}
+    GroupInfo(int _group_index, GroupType _type, int _nNodes, int _nRanks, std::vector<int> _Ranks,std::vector<int>_NVSwitchs,std::vector<int> _Dpus={},int _dpu_per_sw=0)
+        : group_index(_group_index),type(_type), nNodes(_nNodes), nRanks(_nRanks), Ranks(_Ranks),NVSwitchs(_NVSwitchs),Dpus(_Dpus), dpuPerSw(_dpu_per_sw){}
     ~GroupInfo(){}
+    inline void show() const{
+      std::cout << "GroupInfo:" << std::endl;
+      std::cout << "  group_index: " << group_index << std::endl;
+      std::cout << "  type: " << static_cast<int>(type) << std::endl;
+      std::cout << "  nNodes: " << nNodes << std::endl;
+      std::cout << "  nRanks: " << nRanks << std::endl;
+
+      std::cout << "  Ranks: ";
+      for (const auto& rank : Ranks) {
+          std::cout << rank << " ";
+      }
+      std::cout << std::endl;
+
+      std::cout << "  NVSwitchs: ";
+      for (const auto& sw : NVSwitchs) {
+          std::cout << sw << " ";
+      }
+      std::cout << std::endl;
+
+      std::cout << "  Dpus: ";
+      for (const auto& sw : Dpus) {
+          std::cout << sw << " ";
+      }
+
+      std::cout << std::endl;
+    }
   };
   class MockNcclGroup {
     struct DoubleBinaryTreeNode {
@@ -119,7 +147,7 @@ namespace MockNccl {
     };
    public:
     MockNcclGroup(){}
-    MockNcclGroup(int _ngpus,int _gpus_per_nodes, int _TP_size,int _DP_size,int _PP_size,int _EP_size,int _DP_EP_size,std::vector<int>_NVSwitch,GPUType _gpu_type);
+    MockNcclGroup(int _ngpus,int _gpus_per_nodes, int _TP_size,int _DP_size,int _PP_size,int _EP_size,int _DP_EP_size,std::vector<int>_NVSwitch,GPUType _gpu_type,std::vector<int> Dpus={},int dpu_per_sw=0);
     ~MockNcclGroup(){};
 
     std::map<std::pair<int,GroupType>,int> GroupIndex;
@@ -127,7 +155,7 @@ namespace MockNccl {
 
     std::map<int,RingChannels> Allringchannels;
     std::map<int,NVLStreechannels> AllNVLStreechannels;
-    std::map<int,TreeChannels> Alltreechannels;
+    std::map<int,TreeChannels> Alltreechannels; //[groupIdx,ringChannels]
     std::map<int,TreeChannels> AllNVLSchannels;
 
     int g_flow_id;
@@ -142,6 +170,8 @@ namespace MockNccl {
     std::map<int,std::shared_ptr<FlowModels>> genAlltoAllFlowModels(GroupType type, int rank, uint64_t data_size);
     std::map<int,std::shared_ptr<FlowModels>> genAllReduceFlowModels(GroupType type , int rank,uint64_t data_size);
     std::map<int,std::shared_ptr<FlowModels>> genAllReduceRingFlowModels(GroupType type , int rank,uint64_t data_size);
+    FlowModels genAllReduceOneDpuFlowModels(GroupInfo gp_info,uint64_t data_size,uint64_t dpuId);
+    std::map<int,std::shared_ptr<FlowModels>> genAllReduceDpuFlowModels(GroupType type ,int ranke,uint64_t data_size);
     std::map<int,std::shared_ptr<FlowModels>> genAllreduceNVLSFlowModels(
         GroupType type,
         int rank,
@@ -166,6 +196,7 @@ namespace MockNccl {
         int rank,
         GroupType type);
     TreeChannels gettreechannels(int rank, GroupType type);
+    // TreeChannels getdpuchannels(int rank, GroupType type);
     TreeChannels get_nvls_channels(int rank,GroupType type);
     NVLStreechannels get_nvls_tree_channels(int rank,GroupType type);
     ncclChannelNode* gen_nvls_tree_intra_channels(std::vector<int>intra_topo,std::map<int, vector<ncclChannelNode*>> &nvlstreechannel);

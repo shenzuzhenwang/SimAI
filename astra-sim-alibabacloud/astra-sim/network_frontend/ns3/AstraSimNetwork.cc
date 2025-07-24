@@ -270,8 +270,10 @@ int main(int argc, char *argv[]) {
   #endif
   
   main1(user_param.network_topo,user_param.network_conf);
-  int nodes_num = node_num - switch_num;
-  int gpu_num = node_num - nvswitch_num - switch_num;
+
+  //nodesnum= gpuNode+nvswitch
+  int nodes_num = node_num - switch_num-dpu_num;
+  int gpu_num = node_num - nvswitch_num - switch_num-dpu_num;
 
   std::map<int, int> node2nvswitch; 
   for(int i = 0; i < gpu_num; ++ i) {
@@ -282,12 +284,30 @@ int main(int argc, char *argv[]) {
     NVswitchs.push_back(i);
   } 
 
+  g_Dpus=std::vector<int>();
+  for(int i=node_num-dpu_num;i<node_num;i++){
+    node2nvswitch[i]=i;
+    g_Dpus.push_back(i);
+  }
+
+  printf("NVSW:[");
+  for(auto nvsw:NVswitchs){
+    cout<<nvsw<<" ";
+  }
+  cout<<"]"<<endl;
+
+  printf("DPUS:[");
+  for(auto nvsw:g_Dpus){
+    cout<<nvsw<<" ";
+  }
+  cout<<"]"<<endl;
+  g_dpu_per_switch=dpu_num/switch_num;
   LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO);
   LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
   LogComponentEnable("GENERIC_SIMULATION", LOG_LEVEL_INFO);
 
-  std::vector<ASTRASimNetwork *> networks(nodes_num, nullptr);
-  std::vector<AstraSim::Sys *> systems(nodes_num, nullptr);
+  std::vector<ASTRASimNetwork *> networks(node_num, nullptr);
+  std::map<int,AstraSim::Sys *> systems;
 
   for (int j = 0; j < nodes_num; j++) {
     networks[j] =
@@ -314,12 +334,51 @@ int main(int argc, char *argv[]) {
         gpu_type,
         {gpu_num},
         NVswitchs,
-        gpus_per_server
+        gpus_per_server,
+        g_Dpus,
+        g_dpu_per_switch
     );
     systems[j ]->nvswitch_id = node2nvswitch[j];
     systems[j ]->num_gpus = nodes_num - nvswitch_num;
   }
   for (int i = 0; i < nodes_num; i++) {
+    systems[i]->workload->fire();
+  }
+
+  for (int j = node_num-dpu_num; j < node_num; j++) {
+    networks[j] =
+        new ASTRASimNetwork(j ,0);
+    systems[j ] = new AstraSim::Sys(
+        networks[j], 
+        nullptr,                  
+        j,                        
+        0,               
+        1,                        
+        {nodes_num},        
+        {1},          
+        "", 
+        user_param.workload, 
+        1, 
+        1,          
+        1,          
+        1,
+        0,                 
+        RESULT_PATH, 
+        "test1",            
+        true,               
+        false,               
+        gpu_type,
+        {gpu_num},
+        NVswitchs,
+        gpus_per_server,
+        g_Dpus,
+        g_dpu_per_switch
+    );
+    systems[j ]->nvswitch_id = node2nvswitch[j];
+    systems[j ]->num_gpus = nodes_num - nvswitch_num;
+  }
+
+  for (int i = node_num-dpu_num; i < node_num; i++) {
     systems[i]->workload->fire();
   }
   std::cout << "simulator run " << std::endl;

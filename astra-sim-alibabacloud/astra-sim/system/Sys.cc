@@ -138,7 +138,9 @@ Sys::Sys(
     GPUType _gpu_type,
     std::vector<int>_all_gpus,
     std::vector<int>_NVSwitchs,
-    int _ngpus_per_node) {
+    int _ngpus_per_node,
+    std::vector<int> _Dpus,
+    int _dpu_per_sw) {
   scheduler_unit = nullptr;
   vLevels = nullptr;
   memBus = nullptr;
@@ -179,6 +181,8 @@ Sys::Sys(
   this->all_gpus = _all_gpus;
   this->gpu_type = _gpu_type;
   this->ngpus_per_node = _ngpus_per_node;
+  this->Dpus=_Dpus;
+  this->dpuPerSwitch=_dpu_per_sw;
   if ((id + npu_offset + 1) > all_generators.size()) {
     all_generators.resize(id + npu_offset + 1);
   }
@@ -1236,7 +1240,56 @@ CollectivePhase Sys::generate_collective_phase(
                         RingFlowModels,
                         channels.size()));
                 return vn;
-              } else if(nccl_info->algorithm == NCCL_ALGO_TREE) {
+              } else if(nccl_info->algorithm==NCCL_ALGO_DPU){
+                std::shared_ptr<MockNccl::FlowModels> RingFlowModels = std::static_pointer_cast<MockNccl::FlowModels>(ptr_FlowModels);
+                MockNccl::TreeChannels treechannels;
+                {
+                  Sys::sysCriticalSection cs;
+                  treechannels = mock_nccl_comms[comm_ps]->get_dpuchannels();
+                  cs.ExitSection();
+                }
+                NcclLog->writeLog(NcclLogLevel::DEBUG,"rank %d generate FlowModels",id);
+                if(RingFlowModels != nullptr){
+                  NcclLog->writeLog(NcclLogLevel::DEBUG,"rank %d NcclMock generate  %d channel and flow model count:  %d",id,treechannels.size(),RingFlowModels->size());
+                  for (auto flow : *RingFlowModels) {
+                    int prev;
+                    int parent_flow_id;
+                    int child_flow_id;
+                    if (flow.second.prev.size() == 0) {
+                      prev = -1;
+                    } else {
+                      prev = flow.second.prev[0];
+                    }
+                    if (flow.second.child_flow_id.size() == 0) {
+                      child_flow_id = -1;
+                    } else {
+                      child_flow_id = flow.second.child_flow_id[0];
+                    }
+                    if (flow.second.parent_flow_id.size() == 0) {
+                      parent_flow_id = -1;
+                    } else {
+                      parent_flow_id = flow.second.parent_flow_id[0];
+                    }
+                    NcclLog->writeLog(NcclLogLevel::DEBUG," %d,  %d,  %d to  %d current_flow_id %d prev rank:  %d parent_flow_id:  %d child_flow_id:  %d chunk_id:  %d flow_size: %lu chunk_count:  %d ",flow.first.first,flow.first.second,flow.second.src,flow.second.dest,flow.second.flow_id,prev,parent_flow_id,child_flow_id,flow.second.chunk_id,flow.second.flow_size,flow.second.chunk_count);
+                  }
+                }
+                CollectivePhase vn(
+                    this,
+                    queue_id,
+                    new NcclTreeFlowModel(
+                        collective_type,
+                        id,
+                        layer_num,
+                        (RingTopology*)topology,
+                        data_size,
+                        direction,
+                        injection_policy,
+                        boost_mode,
+                        RingFlowModels,
+                        treechannels.size()));
+                return vn;
+              } 
+              else if(nccl_info->algorithm == NCCL_ALGO_TREE) {
                 std::shared_ptr<MockNccl::FlowModels> TreeFlowModels;
                 MockNccl::TreeChannels treechannels;
                 {
@@ -1364,7 +1417,7 @@ bool Sys::mock_nccl_grobal_group_init(){
     int DP_size = all_gpus[0] / (TP_size * PP_size);
     int EP_size = workload->expert_parallel_npu_group;
     int DP_EP_size = DP_size / EP_size;
-    GlobalGroup = new MockNccl::MockNcclGroup(all_gpus[0],ngpus_per_node,TP_size,DP_size,PP_size,EP_size,DP_EP_size,NVSwitchs,gpu_type);
+    GlobalGroup = new MockNccl::MockNcclGroup(all_gpus[0],ngpus_per_node,TP_size,DP_size,PP_size,EP_size,DP_EP_size,NVSwitchs,gpu_type,Dpus,dpuPerSwitch);
     return true;
   }
 }

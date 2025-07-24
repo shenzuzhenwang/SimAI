@@ -88,9 +88,10 @@ uint32_t enable_trace = 1;
 
 uint32_t buffer_size = 16;
 
-uint32_t node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server;
+uint32_t node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server,dpu_num,g_dpu_per_switch;
 GPUType gpu_type;
 std::vector<int>NVswitchs;
+std::vector<int> g_Dpus;
 
 uint32_t qp_mon_interval = 100; 
 uint32_t bw_mon_interval = 10000; 
@@ -698,6 +699,7 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>),void (*send_fini
   tracef.open(trace_file.c_str());
   string gpu_type_str;
 
+  //nodeNum=node+nvswitch+switch+dpu
   topof >> node_num >> gpus_per_server >> nvswitch_num >> switch_num >>
       link_num >> gpu_type_str;
   flowf >> flow_num;
@@ -713,7 +715,7 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>),void (*send_fini
   } else{
     gpu_type = GPUType::NONE;
   }
-
+  topof>>dpu_num;
   std::vector<uint32_t> node_type(node_num, 0);
   for (uint32_t i = 0; i < nvswitch_num; i++) {
     uint32_t sid;
@@ -725,6 +727,13 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>),void (*send_fini
 		uint32_t sid;
 		topof >> sid;
 		node_type[sid] = 1;
+	}
+  for (uint32_t i = 0; i < dpu_num; i++)
+	{
+    //DPU
+		uint32_t sid;
+		topof >> sid;
+		node_type[sid] = 0;
 	}
 	for (uint32_t i = 0; i < node_num; i++){
 		if (node_type[i] == 0)

@@ -591,9 +591,9 @@ def analysis_template(args, default_parameters):
             'gpu_per_server': 1,
             'psw_switch_num': 0,  
             'nics_per_aswitch': 64,  # 每个交换机有64个网卡连接
-            'bandwidth': '25Gbps',  # 假设带宽为400Gbps
+            'bandwidth': '400Gbps',  # 假设带宽为400Gbps
             'nv_switch_per_server':1,
-            'latency': '0.000001ms'
+            'latency': '0.00000ms'
         })
         parameters.update({
             'rail_optimized': False,  # 假设没有RAIL优化

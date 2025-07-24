@@ -14,16 +14,16 @@
 */
 
 #include "astra-sim/system/AstraNetworkAPI.hh"
-#include "astra-sim/system/Sys.hh"
-#include "astra-sim/system/RecvPacketEventHadndlerData.hh"
 #include "astra-sim/system/Common.hh"
 #include "astra-sim/system/MockNcclLog.h"
+#include "astra-sim/system/RecvPacketEventHadndlerData.hh"
+#include "astra-sim/system/Sys.hh"
+#include "entry.h"
 #include "ns3/applications-module.h"
 #include "ns3/core-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/network-module.h"
-#include "entry.h"
 #include <execinfo.h>
 #include <fstream>
 #include <iostream>
@@ -68,10 +68,7 @@ private:
 
 public:
     queue<sim_event> sim_event_queue;
-    ASTRASimNetwork(int rank, int npu_offset) : AstraNetworkAPI(rank)
-    {
-        this->npu_offset = npu_offset;
-    }
+    ASTRASimNetwork(int rank, int npu_offset) : AstraNetworkAPI(rank) { this->npu_offset = npu_offset; }
     ~ASTRASimNetwork() {}
     int sim_comm_size(AstraSim::sim_comm comm, int *size) { return 0; }
     int sim_finish()
@@ -82,14 +79,12 @@ public:
             if (p.second == 0)
             {
                 std::cout << "sim_finish on sent, " << " Thread id: " << pthread_self() << std::endl;
-                cout << "All data sent from node " << p.first << " is " << it->second
-                     << "\n";
+                cout << "All data sent from node " << p.first << " is " << it->second << "\n";
             }
             else
             {
                 std::cout << "sim_finish on received, " << " Thread id: " << pthread_self() << std::endl;
-                cout << "All data received by node " << p.first << " is " << it->second
-                     << "\n";
+                cout << "All data received by node " << p.first << " is " << it->second << "\n";
             }
         }
         exit(0);
@@ -103,8 +98,8 @@ public:
         timeSpec.time_val = Simulator::Now().GetNanoSeconds();
         return timeSpec;
     }
-    virtual void sim_schedule(AstraSim::timespec_t delta,
-                              void (*fun_ptr)(void *fun_arg), void *fun_arg)
+    // 向 ns-3 模拟器注册一个事件，指定延迟时间、回调函数和参数
+    virtual void sim_schedule(AstraSim::timespec_t delta, void (*fun_ptr)(void *fun_arg), void *fun_arg)
     {
         task1 t;
         t.type = 2;
@@ -114,13 +109,8 @@ public:
         Simulator::Schedule(NanoSeconds(t.schTime), t.msg_handler, t.fun_arg);
         return;
     }
-    virtual int sim_send(void *buffer,
-                         uint64_t count,
-                         int type,
-                         int dst,
-                         int tag,
-                         AstraSim::sim_request *request,
-                         void (*msg_handler)(void *fun_arg), void *fun_arg)
+    virtual int sim_send(void *buffer, uint64_t count, int type, int dst, int tag, AstraSim::sim_request *request, void (*msg_handler)(void *fun_arg),
+                         void *fun_arg)
     {
         dst += npu_offset;
         task1 t;
@@ -142,9 +132,8 @@ public:
         SendFlow(rank, dst, count, msg_handler, fun_arg, tag, request);
         return 0;
     }
-    virtual int sim_recv(void *buffer, uint64_t count, int type, int src, int tag,
-                         AstraSim::sim_request *request,
-                         void (*msg_handler)(void *fun_arg), void *fun_arg)
+    virtual int sim_recv(void *buffer, uint64_t count, int type, int src, int tag, AstraSim::sim_request *request, void (*msg_handler)(void *fun_arg),
+                         void *fun_arg)
     {
 #ifdef NS3_MTP
         MtpInterface::explicitCriticalSection cs;
@@ -162,10 +151,10 @@ public:
         AstraSim::RecvPacketEventHadndlerData *ehd = (AstraSim::RecvPacketEventHadndlerData *)t.fun_arg;
         AstraSim::EventType event = ehd->event;
         tag = ehd->flowTag.tag_id;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channdl id %d", src, rank, tag, ehd->flowTag.channel_id);
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channdl id %d", src, rank, tag,
+                          ehd->flowTag.channel_id);
 
-        if (recvHash.find(make_pair(tag, make_pair(t.src, t.dest))) !=
-            recvHash.end())
+        if (recvHash.find(make_pair(tag, make_pair(t.src, t.dest))) != recvHash.end())
         {
             uint64_t count = recvHash[make_pair(tag, make_pair(t.src, t.dest))];
             if (count == t.count)
@@ -209,17 +198,21 @@ public:
         }
         else
         {
-            if (expeRecvHash.find(make_pair(tag, make_pair(t.src, t.dest))) ==
-                expeRecvHash.end())
+            if (expeRecvHash.find(make_pair(tag, make_pair(t.src, t.dest))) == expeRecvHash.end())
             {
                 expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))] = t;
-                NcclLog->writeLog(NcclLogLevel::DEBUG, " [Packet arrived late, registering first] recvHash do not find expeRecvHash.new make src  %d dest  %d t.count:  %llu channel_id  %d current_flow_id  %d", t.src, t.dest, t.count, tag, flowTag.current_flow_id);
+                NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                  " [Packet arrived late, registering first] recvHash do not find expeRecvHash.new make src  %d dest  %d t.count:  "
+                                  "%llu channel_id  %d current_flow_id  %d",
+                                  t.src, t.dest, t.count, tag, flowTag.current_flow_id);
             }
             else
             {
-                uint64_t expecount =
-                    expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))].count;
-                NcclLog->writeLog(NcclLogLevel::DEBUG, " [Packet arrived late, re-registering] recvHash do not find expeRecvHash.add make src  %d dest  %d expecount:  %d t.count:  %d tag_id  %d current_flow_id  %d", t.src, t.dest, expecount, t.count, tag, flowTag.current_flow_id);
+                uint64_t expecount = expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))].count;
+                NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                  " [Packet arrived late, re-registering] recvHash do not find expeRecvHash.add make src  %d dest  %d expecount:  %d "
+                                  "t.count:  %d tag_id  %d current_flow_id  %d",
+                                  t.src, t.dest, expecount, t.count, tag, flowTag.current_flow_id);
             }
         }
 #ifdef NS3_MTP
@@ -229,9 +222,7 @@ public:
     sim_recv_end_section:
         return 0;
     }
-    void handleEvent(int dst, int cnt)
-    {
-    }
+    void handleEvent(int dst, int cnt) {}
 };
 
 struct user_param
@@ -348,36 +339,16 @@ int main(int argc, char *argv[])
 
     for (int j = 0; j < nodes_num; j++)
     {
-        networks[j] =
-            new ASTRASimNetwork(j, 0);
-        systems[j] = new AstraSim::Sys(
-            networks[j],
-            nullptr,
-            j,
-            0,
-            1,
-            {nodes_num},
-            {1},
-            "",
-            user_param.workload,
-            1,
-            1,
-            1,
-            1,
-            0,
-            RESULT_PATH,
-            "test1",
-            true,
-            false,
-            gpu_type,
-            {gpu_num},
-            NVswitchs,
-            gpus_per_server);
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Creating ASTRASimNetwork for node %d", j);
+        networks[j] = new ASTRASimNetwork(j, 0);
+        systems[j] = new AstraSim::Sys(networks[j], nullptr, j, 0, 1, {nodes_num}, {1}, "", user_param.workload, 1, 1, 1, 1, 0, RESULT_PATH, "test1",
+                                       true, false, gpu_type, {gpu_num}, NVswitchs, gpus_per_server);
         systems[j]->nvswitch_id = node2nvswitch[j];
         systems[j]->num_gpus = nodes_num - nvswitch_num;
     }
     for (int i = 0; i < nodes_num; i++)
     {
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "workload->fire for node %d", i);
         systems[i]->workload->fire();
     }
     std::cout << "simulator run " << std::endl;

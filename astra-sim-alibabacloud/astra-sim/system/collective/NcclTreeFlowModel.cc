@@ -415,6 +415,7 @@ void NcclTreeFlowModel::release_packets(int channel_id, int flow_id, uint64_t me
     {
         NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_MA", id, id,
                           processed, send_back, channel_id, flow_id);
+        // send_to_MA register_event PacketBundle::call 1us后
         (new PacketBundle(stream->owner, stream, {}, processed, send_back, message_size, transmition, channel_id, flow_id))->send_to_MA();
     }
     else
@@ -514,7 +515,7 @@ void NcclTreeFlowModel::insert_packets(int channel_id, int flow_id)
         NPU_to_MA = true;
         release_packets(channel_id, flow_id, message_size);
         (*zero_latency_packets)[channel_id]--;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*zero_latency_packets)[channel_id] : %d ", id, (*zero_latency_packets)[channel_id]);
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "id: %d (*zero_latency_packets)[channel_id]: %d ", id, (*zero_latency_packets)[channel_id]);
         return;
     }
     else if ((*non_zero_latency_packets)[channel_id] > 0)
@@ -542,7 +543,7 @@ void NcclTreeFlowModel::insert_packets(int channel_id, int flow_id)
             send_back = true;
         }
         NPU_to_MA = false;
-        release_packets(channel_id, flow_id, message_size);
+        release_packets(channel_id, flow_id, message_size); // send_to_NPU/MA 模拟1us后数据包才开始网络传输
         (*non_zero_latency_packets)[channel_id]--;
         NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] : %d ", id, (*non_zero_latency_packets)[channel_id]);
         return;

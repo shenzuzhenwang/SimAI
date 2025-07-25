@@ -2117,7 +2117,8 @@ void Sys::handleEvent(void *arg)
     else if (event == EventType::PacketReceived)
     {
         RecvPacketEventHadndlerData *rcehd = (RecvPacketEventHadndlerData *)ehd;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "packet received, receiver id: ??, node id: %d", node->id);
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketReceived, stream num %d, flow id %d, child flow id %d", node->id,
+                          rcehd->stream_num, rcehd->flow_id, rcehd->child_flow_id);
         StreamBaseline *owner = static_cast<StreamBaseline *>(rcehd->owner);
         owner->consume(rcehd);
         delete rcehd;
@@ -2126,7 +2127,8 @@ void Sys::handleEvent(void *arg)
     else if (event == EventType::PacketSent)
     {
         SendPacketEventHandlerData *sendhd = (SendPacketEventHandlerData *)ehd;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "packet sent, sender id: %d, recv id: %d", sendhd->senderNodeId, sendhd->receiverNodeId);
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketSent, sender id %d, recv id %d, flow id %d, child flow id %d",
+                          node->id, sendhd->senderNodeId, sendhd->receiverNodeId, sendhd->flow_id, sendhd->child_flow_id);
 #ifdef NS3_MTP
         Sys::sysCriticalSection cs;
 #endif
@@ -2183,6 +2185,7 @@ void Sys::handleEvent(void *arg)
     }
     else if (event == EventType::PacketSentFinshed)
     {
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketSentFinshed", node->id);
         AstraSim::SendPacketEventHandlerData *ehd = (AstraSim::SendPacketEventHandlerData *)arg;
         if (ehd->owner != nullptr)
             ehd->owner->sendcallback(ehd);

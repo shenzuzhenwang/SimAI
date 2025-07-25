@@ -35,7 +35,7 @@ void StreamBaseline::init()
         queuing_delay.push_back(last_phase_change - creation_time);
     }
     queuing_delay.push_back(Sys::boostedTick() - last_phase_change);
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run finish, queuing_delay: %d", owner->id, stream_num,
+    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run finish, queuing_delay: %f", owner->id, stream_num,
                       queuing_delay.back());
     total_packets_sent = 1;
 }

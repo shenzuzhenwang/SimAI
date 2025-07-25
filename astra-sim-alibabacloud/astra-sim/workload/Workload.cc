@@ -914,7 +914,7 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         // 获取当前层前向计算时间，是workload文件里的
         if (delay_loaded == false)
         {
-            counter = layers[index]->get_fwd_pass_compute(); // ？？有问题，文件为0，打印为0，这里却变为了1
+            counter = layers[index]->get_fwd_pass_compute();
             delay_loaded = true;
         }
         // 如果还有延迟，注册等待事件，进行计算等待
@@ -948,6 +948,7 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
             current_state = LoopState::Input_Gradient;
             index--;
         }
+        // log打印的是这里，无论如何必须延时1us
         NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d register_event EventType::General %d", generator->id, index, 1);
         generator->register_event(this, EventType::General, NULL, 1);
         return;

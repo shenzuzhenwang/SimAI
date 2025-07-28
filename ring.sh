@@ -1,8 +1,8 @@
 #ring allreduce bash
 set -e
 
-TOPO="No_Rail_Opti_64g_1gps_SingleToR_400Gbps_H100"
-WORKLOAD="example/workload_allreduce.txt"
+TOPO="64g_1gps_SingleToR_25Gbps_H100_1dps"
+WORKLOAD="example/16Mallreduce.txt"
 CONF="astra-sim-alibabacloud/inputs/config/SimAI.conf"
 RUN_LOG="sim_run.log"
 ENDTOEND="ncclFlowModel_EndToEnd.csv"

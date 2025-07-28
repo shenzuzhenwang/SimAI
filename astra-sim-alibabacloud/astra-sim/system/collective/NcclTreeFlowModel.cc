@@ -139,7 +139,8 @@ int NcclTreeFlowModel::get_non_zero_latency_packets() { return (nodes_in_ring - 
 void NcclTreeFlowModel::run(EventType event, CallData *data)
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel %d run event: %d", id, static_cast<int>(event));
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel %d run event: %d", id, static_cast<int>(event));
     BasicEventHandlerData *ehd = (BasicEventHandlerData *)data;
     if (event == EventType::General)
     {
@@ -197,11 +198,12 @@ void NcclTreeFlowModel::run(EventType event, CallData *data)
             return;
         }
 #endif
-        NcclLog->writeLog(
-            NcclLogLevel::DEBUG,
-            "PacketReceived sender_node:  %d recevier  %d current_flow id:  %d channel_id:  %d tag_id  %d free_packets  %d next_flow_list.size %d",
-            flowTag.sender_node, flowTag.receiver_node, flowTag.current_flow_id, flowTag.channel_id, flowTag.tag_id,
-            free_packets[std::make_pair(channel_id, flowTag.sender_node)], next_flow_list.size());
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG,
+                              "PacketReceived sender_node:  %d recevier  %d current_flow id:  %d channel_id:  %d tag_id  %d free_packets  %d "
+                              "next_flow_list.size %d",
+                              flowTag.sender_node, flowTag.receiver_node, flowTag.current_flow_id, flowTag.channel_id, flowTag.tag_id,
+                              free_packets[std::make_pair(channel_id, flowTag.sender_node)], next_flow_list.size());
 #ifdef PHY_MTP
         for (int next_flow_id : next_flow_list)
         {
@@ -222,7 +224,8 @@ void NcclTreeFlowModel::run(EventType event, CallData *data)
                 break;
             }
         }
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "next_flow_list.size %d", next_flow_list.size());
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "next_flow_list.size %d", next_flow_list.size());
         for (int next_flow_id : next_flow_list)
         {
             NcclTreeFlowModel::FlowCriticalSection cs;
@@ -315,8 +318,9 @@ void NcclTreeFlowModel::run(EventType event, CallData *data)
         int sent_flow_id = flowTag.current_flow_id;
         int channel_id = flowTag.channel_id;
         std::vector<int> next_flow_list = flowTag.tree_flow_list;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "PacketSentFinshed src %d dst %d channel_id %d flow_id %d", flowTag.sender_node, flowTag.receiver_node,
-                          flowTag.channel_id, flowTag.current_flow_id);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "PacketSentFinshed src %d dst %d channel_id %d flow_id %d", flowTag.sender_node,
+                              flowTag.receiver_node, flowTag.channel_id, flowTag.current_flow_id);
         reduce(channel_id, sent_flow_id);
         bool flow_exist = next_flow_list.size() == 0 ? true : false;
 #ifndef PHY_MTP
@@ -413,15 +417,17 @@ void NcclTreeFlowModel::release_packets(int channel_id, int flow_id, uint64_t me
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
     if (NPU_to_MA == true)
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_MA", id, id,
-                          processed, send_back, channel_id, flow_id);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_MA", id,
+                              id, processed, send_back, channel_id, flow_id);
         // send_to_MA register_event PacketBundle::call 1us后
         (new PacketBundle(stream->owner, stream, {}, processed, send_back, message_size, transmition, channel_id, flow_id))->send_to_MA();
     }
     else
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_NPU", id, id,
-                          processed, send_back, channel_id, flow_id);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_NPU", id,
+                              id, processed, send_back, channel_id, flow_id);
         (new PacketBundle(stream->owner, stream, {}, processed, send_back, message_size, transmition, channel_id, flow_id))->send_to_NPU();
     }
 }
@@ -437,8 +443,9 @@ void NcclTreeFlowModel::process_stream_count(int channel_id)
     {
         _stream_count[channel_id]--;
     }
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel::process_stream_count channel_id %d _stream_count %d", channel_id,
-                      _stream_count[channel_id]);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel::process_stream_count channel_id %d _stream_count %d", channel_id,
+                          _stream_count[channel_id]);
     if (_stream_count[channel_id] == 0 && stream->state != StreamState::Dead)
         stream->changeState(StreamState::Zombie);
     cs.ExitSection();
@@ -515,12 +522,14 @@ void NcclTreeFlowModel::insert_packets(int channel_id, int flow_id)
         NPU_to_MA = true;
         release_packets(channel_id, flow_id, message_size);
         (*zero_latency_packets)[channel_id]--;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "id: %d (*zero_latency_packets)[channel_id]: %d ", id, (*zero_latency_packets)[channel_id]);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "id: %d (*zero_latency_packets)[channel_id]: %d ", id, (*zero_latency_packets)[channel_id]);
         return;
     }
     else if ((*non_zero_latency_packets)[channel_id] > 0)
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] > 0", id);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] > 0", id);
         uint64_t message_size = f.flow_size;
         packets[std::make_pair(channel_id, flow_id)].push_back(
             MyPacket(stream->current_queue_id, current_sender[0], current_receiver, message_size, channel_id, flow_id));
@@ -545,7 +554,9 @@ void NcclTreeFlowModel::insert_packets(int channel_id, int flow_id)
         NPU_to_MA = false;
         release_packets(channel_id, flow_id, message_size); // send_to_NPU/MA 模拟1us后数据包才开始网络传输
         (*non_zero_latency_packets)[channel_id]--;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] : %d ", id, (*non_zero_latency_packets)[channel_id]);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] : %d ", id,
+                              (*non_zero_latency_packets)[channel_id]);
         return;
     }
     Sys::sys_panic("should not inject nothing!");
@@ -562,7 +573,8 @@ bool NcclTreeFlowModel::ready(int channel_id, int flow_id)
         }
         if (!enabled || packets[std::make_pair(channel_id, flow_id)].size() == 0 || _stream_count[channel_id] == 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel not ready!");
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel not ready!");
             return false;
         }
         packet = packets[std::make_pair(channel_id, flow_id)].front();
@@ -647,7 +659,8 @@ void NcclTreeFlowModel::exit()
     }
 #endif
     stream->owner->proceed_to_next_vnet_baseline((StreamBaseline *)stream);
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel exit");
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel exit");
     return;
 }
 
@@ -741,7 +754,8 @@ bool NcclTreeFlowModel::phy_ready(int channel_id, int flow_id)
 void NcclTreeFlowModel::waiting_to_exit()
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel::waiting_to_exit begin ");
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel::waiting_to_exit begin ");
     while (!judge_exit_flag)
     {
     };

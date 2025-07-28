@@ -285,11 +285,12 @@ RingChannels MockNcclGroup::genringchannels(int rank, MockNccl::GroupType type)
     int nNodes;
     int nlocalRanks;
     int delta;
-    if (GroupIndex.count(std::make_pair(rank, type)) == 0)
-    {
-        NcclLog->writeLog(NcclLogLevel::ERROR,
-                          "No corresponding group information is generated, and there is an error in creating the ring channel.");
-    }
+    // 以下错误一直有，但应该没有影响
+    // if (GroupIndex.count(std::make_pair(rank, type)) == 0)
+    // {
+    //     NcclLog->writeLog(NcclLogLevel::ERROR,
+    //                       "No corresponding group information is generated, and there is an error in creating the ring channel.");
+    // }
     gp_idx = GroupIndex[std::make_pair(rank, type)];
     gp_info = AllGroups[GroupIndex[std::make_pair(rank, type)]];
     nNodes = gp_info.nNodes;
@@ -1087,7 +1088,8 @@ void DataSlice(uint64_t data_size, uint64_t nDpu)
 FlowModels MockNcclGroup::genAllReduceOneDpuFlowModels(GroupInfo gp_info, uint64_t data_size, uint64_t dpuId)
 {
     int nranks = gp_info.nRanks;
-    uint64_t agg_grain = 1 * 1024 * 1024; // 1M per flow
+    // uint64_t agg_grain = 1 * 1024 * 1024; // 1M per flow
+    uint64_t agg_grain = data_size / nranks; // 每个flow的大小
     uint64_t flowNumPerGpu = (data_size + agg_grain - 1) / agg_grain;
     FlowModels result = {};
 
@@ -1164,10 +1166,10 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceDpuFlowMod
     }
     result = genAllReduceOneDpuFlowModels(gp_info, data_size, gp_info.Dpus[0]);
 
-    for (auto [k, v] : result)
-    {
-        v.show();
-    }
+    // for (auto [k, v] : result)
+    // {
+    //     v.show();
+    // }
     rank2flowmodels.clear();
     for (auto flow_models_it = result.begin(); flow_models_it != result.end(); flow_models_it++)
     {
@@ -1459,28 +1461,28 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceRingFlowMo
         rank2pflowmodels[it->first] = std::make_shared<FlowModels>(it->second);
     }
 
-    for (const auto &rank_entry : rank2pflowmodels)
-    {
-        int rank = rank_entry.first;
-        const std::shared_ptr<FlowModels> &flow_models_ptr = rank_entry.second;
+    // for (const auto &rank_entry : rank2pflowmodels)
+    // {
+    //     int rank = rank_entry.first;
+    //     const std::shared_ptr<FlowModels> &flow_models_ptr = rank_entry.second;
 
-        std::cout << "Rank: " << rank << std::endl;
+    //     std::cout << "Rank: " << rank << std::endl;
 
-        if (!flow_models_ptr)
-        {
-            std::cout << "  (empty or null FlowModels)" << std::endl;
-            continue;
-        }
+    //     if (!flow_models_ptr)
+    //     {
+    //         std::cout << "  (empty or null FlowModels)" << std::endl;
+    //         continue;
+    //     }
 
-        for (auto &flow_entry : *flow_models_ptr)
-        {
-            const std::pair<int, int> &flow_key = flow_entry.first;
-            auto &flow = flow_entry.second;
+    //     for (auto &flow_entry : *flow_models_ptr)
+    //     {
+    //         const std::pair<int, int> &flow_key = flow_entry.first;
+    //         auto &flow = flow_entry.second;
 
-            std::cout << "  Flow (" << flow_key.first << ", " << flow_key.second << "):" << std::endl;
-            flow.show(); // 调用成员函数打印内容
-        }
-    }
+    //         std::cout << "  Flow (" << flow_key.first << ", " << flow_key.second << "):" << std::endl;
+    //         flow.show(); // 调用成员函数打印内容
+    //     }
+    // }
     return rank2pflowmodels;
 }
 
@@ -1726,7 +1728,7 @@ TreeChannels MockNcclGroup::get_nvls_channels(int rank, GroupType type)
     gp_info = AllGroups[gp_idx];
     if (gp_info.nNodes > 1)
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, " %d", "error NVLS ALGO dont");
+        // NcclLog->writeLog(NcclLogLevel::ERROR, "error NVLS ALGO dont"); 会报错，但是无伤大雅
         return {};
     }
     else

@@ -194,8 +194,9 @@ Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int n
         oss << "]";
         return oss.str();
     };
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Creating Sys for node %d with physical dimensions: %s, queues per dimension: %s", id,
-                      vectorToString(physical_dims).c_str(), vectorToString(queues_per_dim).c_str());
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Creating Sys for node %d with physical dimensions: %s, queues per dimension: %s", id,
+                          vectorToString(physical_dims).c_str(), vectorToString(queues_per_dim).c_str());
     // physical_dims=[128]; queues_per_dim=[1]
 
     bool result = post_process_inputs();
@@ -977,7 +978,9 @@ void Sys::SchedulerUnit::notify_stream_added(int vnet)
         running_streams[vnet]++;               // 当前 vnet 上运行的流数量加 1
         std::advance(stream_pointer[vnet], 1); // 移动到下一个 stream
     }
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d notify_stream_added finish, vnet: %d, running_streams: %d", sys->id, vnet, running_streams[vnet]);
+    if (sys->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d notify_stream_added finish, vnet: %d, running_streams: %d", sys->id, vnet,
+                          running_streams[vnet]);
 }
 void Sys::SchedulerUnit::notify_stream_removed(int vnet, Tick running_time)
 {
@@ -1015,8 +1018,9 @@ void Sys::SchedulerUnit::notify_stream_removed(int vnet, Tick running_time)
         std::advance(stream_pointer[vnet], 1);
     }
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d notify_stream_removed finished, vnet: %d, running_streams: %d, latency: %ld", sys->id, vnet,
-                      running_streams[vnet], running_time);
+    if (sys->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d notify_stream_removed finished, vnet: %d, running_streams: %d, latency: %ld", sys->id, vnet,
+                          running_streams[vnet], running_time);
 }
 std::vector<double> Sys::SchedulerUnit::get_average_latency_per_dimension()
 {
@@ -1136,8 +1140,9 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
         {
             comm_ps = static_cast<ParallelStrategy>(workload->layers[workload->index]->weight_grad_group_type);
         }
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d generate phase by NcclFlowModel for comm_ps: %d, data_size: %lu, collective_type: %d", id,
-                          comm_ps, data_size, (int)collective_type);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d generate phase by NcclFlowModel for comm_ps: %d, data_size: %lu, collective_type: %d", id,
+                              comm_ps, data_size, (int)collective_type);
         MockNccl::ncclInfo *nccl_info;
         std::shared_ptr<void> ptr_FlowModels;
         {
@@ -1156,10 +1161,12 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
                 channels = mock_nccl_comms[comm_ps]->get_rings();
                 cs.ExitSection();
             }
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d generate RingFlowModels", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d generate RingFlowModels", id);
             if (RingFlowModels != nullptr)
             {
-                NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d RingFlowModels channel %d model %d", id, channels.size(), RingFlowModels->size());
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d RingFlowModels channel %d model %d", id, channels.size(), RingFlowModels->size());
                 for (auto flow : *RingFlowModels)
                 {
                     int prev;
@@ -1189,11 +1196,13 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
                     {
                         parent_flow_id = flow.second.parent_flow_id[0];
                     }
-                    NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                      "rank %d: %d, %d, %d to %d current_flow_id %d prev rank: %d parent_flow_id: %d child_flow_id: %d chunk_id: %d; "
-                                      "flow_size: %lu chunk_count:  %d ",
-                                      id, flow.first.first, flow.first.second, flow.second.src, flow.second.dest, flow.second.flow_id, prev,
-                                      parent_flow_id, child_flow_id, flow.second.chunk_id, flow.second.flow_size, flow.second.chunk_count);
+                    if (id == 0)
+                        NcclLog->writeLog(
+                            NcclLogLevel::DEBUG,
+                            "rank %d: %d, %d, %d to %d current_flow_id %d prev rank: %d parent_flow_id: %d child_flow_id: %d chunk_id: %d; "
+                            "flow_size: %lu chunk_count:  %d ",
+                            id, flow.first.first, flow.first.second, flow.second.src, flow.second.dest, flow.second.flow_id, prev, parent_flow_id,
+                            child_flow_id, flow.second.chunk_id, flow.second.flow_size, flow.second.chunk_count);
                 }
             }
             CollectivePhase vn(this, queue_id,
@@ -1210,11 +1219,13 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
                 treechannels = mock_nccl_comms[comm_ps]->get_dpuchannels();
                 cs.ExitSection();
             }
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d generate DPUFlowModels", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d generate DPUFlowModels", id);
             if (RingFlowModels != nullptr)
             {
-                NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d NcclMock generate  %d channel and flow model count:  %d", id, treechannels.size(),
-                                  RingFlowModels->size());
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d NcclMock generate  %d channel and flow model count:  %d", id, treechannels.size(),
+                                      RingFlowModels->size());
                 for (auto flow : *RingFlowModels)
                 {
                     int prev;
@@ -1244,11 +1255,13 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
                     {
                         parent_flow_id = flow.second.parent_flow_id[0];
                     }
-                    NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                      "rank %d: %d, %d, %d to %d current_flow_id %d prev rank: %d parent_flow_id: %d child_flow_id: %d chunk_id: %d; "
-                                      "flow_size: %lu chunk_count:  %d ",
-                                      id, flow.first.first, flow.first.second, flow.second.src, flow.second.dest, flow.second.flow_id, prev,
-                                      parent_flow_id, child_flow_id, flow.second.chunk_id, flow.second.flow_size, flow.second.chunk_count);
+                    if (id == 0)
+                        NcclLog->writeLog(
+                            NcclLogLevel::DEBUG,
+                            "rank %d: %d, %d, %d to %d current_flow_id %d prev rank: %d parent_flow_id: %d child_flow_id: %d chunk_id: %d; "
+                            "flow_size: %lu chunk_count:  %d ",
+                            id, flow.first.first, flow.first.second, flow.second.src, flow.second.dest, flow.second.flow_id, prev, parent_flow_id,
+                            child_flow_id, flow.second.chunk_id, flow.second.flow_size, flow.second.chunk_count);
                 }
             }
             CollectivePhase vn(this, queue_id,
@@ -1281,11 +1294,13 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
                 treechannels = mock_nccl_comms[comm_ps]->get_treechannels();
                 cs.ExitSection();
             }
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d generate FlowModels", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d generate FlowModels", id);
             if (RingFlowModels != nullptr)
             {
-                NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d NcclMock generate  %d channel and flow model count:  %d", id, treechannels.size(),
-                                  RingFlowModels->size());
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG, "rank %d NcclMock generate  %d channel and flow model count:  %d", id, treechannels.size(),
+                                      RingFlowModels->size());
                 for (auto flow : *RingFlowModels)
                 {
                     int prev;
@@ -1315,11 +1330,13 @@ CollectivePhase Sys::generate_collective_phase(ComType collective_type, int laye
                     {
                         parent_flow_id = flow.second.parent_flow_id[0];
                     }
-                    NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                      " %d,  %d,  %d to  %d current_flow_id %d prev rank:  %d parent_flow_id:  %d child_flow_id:  %d chunk_id:  %d "
-                                      "flow_size: %lu chunk_count:  %d ",
-                                      flow.first.first, flow.first.second, flow.second.src, flow.second.dest, flow.second.flow_id, prev,
-                                      parent_flow_id, child_flow_id, flow.second.chunk_id, flow.second.flow_size, flow.second.chunk_count);
+                    if (id == 0)
+                        NcclLog->writeLog(
+                            NcclLogLevel::DEBUG,
+                            " %d,  %d,  %d to  %d current_flow_id %d prev rank:  %d parent_flow_id:  %d child_flow_id:  %d chunk_id:  %d "
+                            "flow_size: %lu chunk_count:  %d ",
+                            flow.first.first, flow.first.second, flow.second.src, flow.second.dest, flow.second.flow_id, prev, parent_flow_id,
+                            child_flow_id, flow.second.chunk_id, flow.second.flow_size, flow.second.chunk_count);
                 }
             }
             CollectivePhase vn(this, queue_id,
@@ -1418,8 +1435,9 @@ bool Sys::mock_nccl_comms_init()
         mock_nccl_comms[DP_EP] = pComm;
     }
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d mock_nccl_comms_init, TP_size %d PP_size %d DP_size %d EP_size %d DP_EP_size %d", id, TP_size,
-                      PP_size, DP_size, EP_size, DP_EP_size);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d mock_nccl_comms_init, TP_size %d PP_size %d DP_size %d EP_size %d DP_EP_size %d", id, TP_size,
+                          PP_size, DP_size, EP_size, DP_EP_size);
     return true;
 }
 
@@ -1470,8 +1488,9 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
 #endif
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
     int pri = get_priority(pref_scheduling); // pref_scheduling为FIFO
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d collective_type %d inter_dimension_scheduling %d pref_scheduling %d", id, collective_type,
-                      inter_dimension_scheduling, pref_scheduling);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d collective_type %d inter_dimension_scheduling %d pref_scheduling %d", id, collective_type,
+                          inter_dimension_scheduling, pref_scheduling);
 
     int count = 0;
     if (id == 0 && (inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedy ||
@@ -1481,7 +1500,8 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
         {
             offline_greedy->reset_loads();
             last_scheduled_collective = Sys::boostedTick();
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Resetting offline_greedy at tick=%lu", id, last_scheduled_collective); // 没进
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Resetting offline_greedy at tick=%lu", id, last_scheduled_collective); // 没进
         }
     }
 
@@ -1491,18 +1511,21 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
         count++;
         chunk_size = std::min(chunk_size, size);
         std::vector<int> dim_mapper(topology->get_num_of_dimensions());
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d count %d dimension %d", id, count, topology->get_num_of_dimensions());
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d count %d dimension %d", id, count, topology->get_num_of_dimensions());
         std::iota(std::begin(dim_mapper), std::end(dim_mapper), 0);
         // All_Gather 通信类型反转维度优先顺序
         if (collective_type == ComType::All_Gather)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d All_Gather detected, reversing dimension order", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d All_Gather detected, reversing dimension order", id);
             std::reverse(dim_mapper.begin(), dim_mapper.end());
         }
         // 按轮转方式重排维度映射（用于 RoundRobin 调度策略）
         if (inter_dimension_scheduling == InterDimensionScheduling::RoundRobin)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d RoundRobin inter-dimension scheduling detected", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d RoundRobin inter-dimension scheduling detected", id);
             std::rotate(dim_mapper.begin(), dim_mapper.begin() + round_robin_inter_dimension_scheduler, dim_mapper.end());
             round_robin_inter_dimension_scheduler++;
             if (round_robin_inter_dimension_scheduler == topology->get_num_of_dimensions())
@@ -1514,7 +1537,8 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
         else if (collective_type != ComType::All_to_All && (inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedy ||
                                                             inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedyFlex))
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d OfflineGreedy inter-dimension scheduling detected", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d OfflineGreedy inter-dimension scheduling detected", id);
             uint64_t prev_size = size;
             dim_mapper = offline_greedy->get_chunk_scheduling(stream_counter, size, recommended_chunk_size, dimensions_involved,
                                                               inter_dimension_scheduling, collective_type);
@@ -1525,7 +1549,8 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
         if (collective_type == ComType::All_to_All || (inter_dimension_scheduling != InterDimensionScheduling::OfflineGreedy &&
                                                        inter_dimension_scheduling != InterDimensionScheduling::OfflineGreedyFlex))
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d reducing size by chunk_size %lu", id, chunk_size);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d reducing size by chunk_size %lu", id, chunk_size);
             size -= chunk_size;
         }
         tmp = chunk_size;
@@ -1535,7 +1560,8 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
         // 普通通信（Baseline All_Reduce 或非 All_Reduce）逐维生成 phase
         if (collective_type != ComType::All_Reduce || collectiveOptimization == CollectiveOptimization::Baseline)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d generating phases", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d generating phases", id);
             for (int dim = 0; dim < topology->get_num_of_dimensions(); dim++)
             {
                 if (topology->get_num_of_nodes_in_dimension(dim_mapper[dim]) == 1 || !dimensions_involved[dim_mapper[dim]])
@@ -1548,8 +1574,10 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                                                   queue.second, InjectionPolicy::Normal, implementation_per_dimension[dim_mapper[dim]], boost_mode);
 
                 vect.push_back(phase);
-                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d generated phase for dimension %d with queue %d and direction %d final_data_size %d",
-                                  id, dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                      "Sys %d generated phase for dimension %d with queue %d and direction %d final_data_size %d", id,
+                                      dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
                 tmp = phase.final_data_size;
             }
         }
@@ -1558,7 +1586,8 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                  inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedyFlex ||
                  inter_dimension_scheduling == InterDimensionScheduling::OnlineGreedy)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d All-Reduce optimization detected", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d All-Reduce optimization detected", id);
             int dim = 0;
             // ReduceScatter 从低维到高维
             for (dim = 0; dim < topology->get_num_of_dimensions(); dim++)
@@ -1572,9 +1601,10 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                     ComType::Reduce_Scatter, layer_num, topology->get_basic_topology_at_dimension(dim_mapper[dim], ComType::Reduce_Scatter), tmp,
                     queue.first, queue.second, InjectionPolicy::Normal, implementation_per_dimension[dim_mapper[dim]], boost_mode);
                 vect.push_back(phase);
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  "Sys %d opti generated ReduceScatter phase for dimension %d with queue %d and direction %d final_data_size %d", id,
-                                  dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                      "Sys %d opti generated ReduceScatter phase for dimension %d with queue %d and direction %d final_data_size %d",
+                                      id, dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
                 tmp = phase.final_data_size;
             }
             // AllGather 从高维回退
@@ -1590,16 +1620,18 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                                                   topology->get_basic_topology_at_dimension(dim_mapper[dim], ComType::All_Gather), tmp, queue.first,
                                                   queue.second, InjectionPolicy::Normal, implementation_per_dimension[dim_mapper[dim]], boost_mode);
                 vect.push_back(phase);
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  "Sys %d opti generated AllGather phase for dimension %d with queue %d and direction %d final_data_size %d", id,
-                                  dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                      "Sys %d opti generated AllGather phase for dimension %d with queue %d and direction %d final_data_size %d", id,
+                                      dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
                 tmp = phase.final_data_size;
             }
         }
         // 其它默认 All-Reduce 策略
         else
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d All-Reduce no optimization", id);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d All-Reduce no optimization", id);
             int dim = 0;
             int last_active_dim = 0;
             // 找出最后一个活跃维度
@@ -1610,8 +1642,9 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                     last_active_dim = dim;
                 }
             }
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d last active dimension is %d, dim_mapper size %d dim_mapper[0] %d", id, last_active_dim,
-                              dim_mapper.size(), dim_mapper[0]);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d last active dimension is %d, dim_mapper size %d dim_mapper[0] %d", id, last_active_dim,
+                                  dim_mapper.size(), dim_mapper[0]);
             // ReduceScatter 到最后活跃维度
             for (dim = 0; dim < last_active_dim; dim++)
             {
@@ -1624,9 +1657,10 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                     ComType::Reduce_Scatter, layer_num, topology->get_basic_topology_at_dimension(dim_mapper[dim], ComType::Reduce_Scatter), tmp,
                     queue.first, queue.second, InjectionPolicy::Normal, implementation_per_dimension[dim_mapper[dim]], boost_mode);
                 vect.push_back(phase);
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  "Sys %d generated ReduceScatter phase for dimension %d with queue %d and direction %d final_data_size %d", id,
-                                  dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                      "Sys %d generated ReduceScatter phase for dimension %d with queue %d and direction %d final_data_size %d", id,
+                                      dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
                 tmp = phase.final_data_size;
             }
             while (dim > 0 && (dimensions_involved[dim_mapper[dim]] == false || topology->get_num_of_nodes_in_dimension(dim_mapper[dim]) == 1))
@@ -1641,9 +1675,10 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                                                   topology->get_basic_topology_at_dimension(dim_mapper[dim], ComType::All_Reduce), tmp, queue.first,
                                                   queue.second, InjectionPolicy::Normal, implementation_per_dimension[dim_mapper[dim]], boost_mode);
                 vect.push_back(phase);
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  "Sys %d generated AllReduce phase for dimension %d with queue %d and direction %d final_data_size %d", id,
-                                  dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                      "Sys %d generated AllReduce phase for dimension %d with queue %d and direction %d final_data_size %d", id,
+                                      dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
                 tmp = phase.final_data_size;
             }
             dim--;
@@ -1659,17 +1694,19 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
                                                   topology->get_basic_topology_at_dimension(dim_mapper[dim], ComType::All_Gather), tmp, queue.first,
                                                   queue.second, InjectionPolicy::Normal, implementation_per_dimension[dim_mapper[dim]], boost_mode);
                 vect.push_back(phase);
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  "Sys %d generated AllGather phase for dimension %d with queue %d and direction %d final_data_size %d", id,
-                                  dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
+                if (id == 0)
+                    NcclLog->writeLog(NcclLogLevel::DEBUG,
+                                      "Sys %d generated AllGather phase for dimension %d with queue %d and direction %d final_data_size %d", id,
+                                      dim_mapper[dim], queue.first, static_cast<int>(queue.second), phase.final_data_size);
                 tmp = phase.final_data_size;
             }
         }
         // 若当前 chunk 有通信阶段，则封装为一个通信流并注入
         if (vect.size() > 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d genStreamBaseline counter %d with %lu phases pri %d", id, stream_counter, vect.size(),
-                              pri);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d genStreamBaseline counter %d with %lu phases pri %d", id, stream_counter, vect.size(),
+                                  pri);
             StreamBaseline *newStream = new StreamBaseline(this, dataset, stream_counter++, vect, pri);
             newStream->current_queue_id = -1;
 #ifdef PHY_MTP
@@ -1765,9 +1802,10 @@ Tick Sys::boostedTick()
 void Sys::proceed_to_next_vnet_baseline(StreamBaseline *stream)
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG,
-                      "Sys %d proceed_to_next_vnet_baseline phase1, stream %d current_queue_id %d phases_to_go.size %d, steps_finished %d", id,
-                      stream->stream_num, stream->current_queue_id, stream->phases_to_go.size(), stream->steps_finished);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG,
+                          "Sys %d proceed_to_next_vnet_baseline phase1, stream %d current_queue_id %d phases_to_go.size %d, steps_finished %d", id,
+                          stream->stream_num, stream->current_queue_id, stream->phases_to_go.size(), stream->steps_finished);
     int previous_vnet = stream->current_queue_id;
     // 如果只完成了第一阶段，则减少首阶段流计数
     if (stream->steps_finished == 1)
@@ -1790,7 +1828,8 @@ void Sys::proceed_to_next_vnet_baseline(StreamBaseline *stream)
         stream->take_bus_stats_average();
         stream->dataset->notify_stream_finished((StreamStat *)stream);
     }
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase2, stream %d", id, stream->stream_num);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase2, stream %d", id, stream->stream_num);
     // 若当前阶段是激活状态并分配了虚拟网络，则从 active_Streams 中移除当前 stream
     if (stream->current_queue_id >= 0 && stream->my_current_phase.enabled)
     {
@@ -1811,18 +1850,21 @@ void Sys::proceed_to_next_vnet_baseline(StreamBaseline *stream)
         if (previous_vnet >= 0)
         {
             // 通知 scheduler 某 vnet 有流被移除
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase2-1, stream %d, notify_stream_removed %d", id,
-                              stream->stream_num, previous_vnet);
+            if (id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase2-1, stream %d, notify_stream_removed %d", id,
+                                  stream->stream_num, previous_vnet);
             scheduler_unit->notify_stream_removed(previous_vnet, Sys::boostedTick() - stream->last_init);
         }
 #ifdef PHY_MTP
         running_list.pop_front();
 #endif
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline delete stream %d", id, stream->stream_num);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline delete stream %d", id, stream->stream_num);
         delete stream;
         return;
     }
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase3, stream %d", id, stream->stream_num);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase3, stream %d", id, stream->stream_num);
     // 将流推进到下一个阶段
     stream->steps_finished++;
     stream->current_queue_id = stream->phases_to_go.front().queue_id;
@@ -1840,10 +1882,11 @@ void Sys::proceed_to_next_vnet_baseline(StreamBaseline *stream)
     // 初始化延迟和计数器
     stream->net_message_latency.push_back(0);
     stream->net_message_counter = 0;
-    NcclLog->writeLog(
-        NcclLogLevel::DEBUG,
-        "Sys %d proceed_to_next_vnet_baseline phase4, stream %d steps_finished %d current_queue_id %d current_com_type %d  phases_to_go.size %d", id,
-        stream->stream_num, stream->steps_finished, stream->current_queue_id, stream->current_com_type, stream->phases_to_go.size());
+    if (id == 0)
+        NcclLog->writeLog(
+            NcclLogLevel::DEBUG,
+            "Sys %d proceed_to_next_vnet_baseline phase4, stream %d steps_finished %d current_queue_id %d current_com_type %d  phases_to_go.size %d",
+            id, stream->stream_num, stream->steps_finished, stream->current_queue_id, stream->current_com_type, stream->phases_to_go.size());
     // 如果当前阶段允许调度，则插入对应虚拟网络队列
     if (stream->my_current_phase.enabled)
     {
@@ -1854,8 +1897,9 @@ void Sys::proceed_to_next_vnet_baseline(StreamBaseline *stream)
     // 通知前一虚拟网络流被移除（重复通知，便于更新每次流切换间隔）
     if (previous_vnet >= 0)
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase5, stream %d, notify_stream_removed %d", id,
-                          stream->stream_num, previous_vnet);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase5, stream %d, notify_stream_removed %d", id,
+                              stream->stream_num, previous_vnet);
         scheduler_unit->notify_stream_removed(previous_vnet, Sys::boostedTick() - stream->last_init);
     }
 #ifdef PHY_MTP
@@ -1865,8 +1909,8 @@ void Sys::proceed_to_next_vnet_baseline(StreamBaseline *stream)
 #endif
     // 通知调度器此 stream 已加入新队列（新 queue_id）
     scheduler_unit->notify_stream_added(stream->current_queue_id);
-
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase6 exit stream %d", id, stream->stream_num);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d proceed_to_next_vnet_baseline phase6 exit stream %d", id, stream->stream_num);
 }
 void Sys::exiting() {}
 void Sys::insert_stream(std::list<BaseStream *> *queue, BaseStream *baseStream)
@@ -2050,7 +2094,8 @@ void Sys::try_register_event(Callable *callable, EventType event, CallData *call
     {
         MockNcclLog *NcclLog = MockNcclLog::getInstance();
         // NcclLog->writeLog(NcclLogLevel::DEBUG, "try_register_event EventType %d ", event);
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d try_register_event %d cycles %d + %d", this->id, event, Sys::boostedTick(), cycles);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d try_register_event %d cycles %d + %d", this->id, event, Sys::boostedTick(), cycles);
 #ifdef NS3_MTP
         Sys::sysCriticalSection cs;
 #endif
@@ -2073,8 +2118,8 @@ void Sys::try_register_event(Callable *callable, EventType event, CallData *call
         timespec_t tmp = generate_time(cycles); // 将 Tick 转换为模拟时间
         BasicEventHandlerData *data = new BasicEventHandlerData(this, EventType::CallEvents);
         MockNcclLog *NcclLog = MockNcclLog::getInstance();
-        // ？？第一次上面打印0+1，即cycles=1，但是tmp.time_val=0；第二次上面打印1+1，即cycles=1，但是tmp.time_val=-311364904；
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d should_schedule at %f", this->id, tmp.time_val);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d should_schedule at %f", this->id, tmp.time_val);
         NI->sim_schedule(tmp, &Sys::handleEvent, data); // 向网络仿真后端注册一个 未来将要触发的事件处理，即 Sys::handleEvent
     }
     cycles = 0;       // 延迟清零
@@ -2095,7 +2140,8 @@ void Sys::schedule(int num)
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
     int ready_list_size = ready_list.size();
     int counter = std::min(num, ready_list_size);
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d can schedule num %d ready_list_size %d", this->id, num, ready_list_size);
+    if (id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d can schedule num %d ready_list_size %d", this->id, num, ready_list_size);
     // 开始调度 counter 个流
     while (counter > 0)
     {
@@ -2119,8 +2165,10 @@ void Sys::schedule(int num)
         first_phase_streams++;
         total_running_streams++;
 #endif
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d schedule counter %d top_vn %d total_phases %d first_phase_streams %d total_running_streams %d",
-                          this->id, counter, top_vn, total_phases, first_phase_streams, total_running_streams);
+        if (id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG,
+                              "Sys %d schedule counter %d top_vn %d total_phases %d first_phase_streams %d total_running_streams %d", this->id,
+                              counter, top_vn, total_phases, first_phase_streams, total_running_streams);
         // 递减剩余可调度流计数
         counter--;
     }
@@ -2140,29 +2188,36 @@ void Sys::handleEvent(void *arg)
 
     if (event == EventType::CallEvents)
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::CallEvents and iterate()", node->id);
+        if (node->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::CallEvents and iterate()", node->id);
         node->iterate(); // 可能重要
         delete ehd;
     }
     else if (event == EventType::RendezvousSend)
     {
+
         RendezvousSendData *rsd = (RendezvousSendData *)ehd;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::RendezvousSend, sender id: %d", node->id, rsd->send->generator->id);
+        if (node->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::RendezvousSend, sender id: %d", node->id,
+                              rsd->send->generator->id);
         rsd->send->call(EventType::General, nullptr);
         delete rsd;
     }
     else if (event == EventType::RendezvousRecv)
     {
         RendezvousRecvData *rrd = (RendezvousRecvData *)ehd;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::RendezvousRecv, receiver id: %d", node->id, rrd->recv->generator->id);
+        if (node->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::RendezvousRecv, receiver id: %d", node->id,
+                              rrd->recv->generator->id);
         rrd->recv->call(EventType::General, nullptr);
         delete rrd;
     }
     else if (event == EventType::PacketReceived)
     {
         RecvPacketEventHadndlerData *rcehd = (RecvPacketEventHadndlerData *)ehd;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketReceived, stream num %d, flow id %d, child flow id %d", node->id,
-                          rcehd->stream_num, rcehd->flow_id, rcehd->child_flow_id);
+        if (node->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketReceived, stream num %d, flow id %d, child flow id %d",
+                              node->id, rcehd->stream_num, rcehd->flow_id, rcehd->child_flow_id);
         StreamBaseline *owner = static_cast<StreamBaseline *>(rcehd->owner);
         owner->consume(rcehd);
         delete rcehd;
@@ -2171,8 +2226,10 @@ void Sys::handleEvent(void *arg)
     else if (event == EventType::PacketSent)
     {
         SendPacketEventHandlerData *sendhd = (SendPacketEventHandlerData *)ehd;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketSent, sender id %d, recv id %d, flow id %d, child flow id %d",
-                          node->id, sendhd->senderNodeId, sendhd->receiverNodeId, sendhd->flow_id, sendhd->child_flow_id);
+        if (node->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG,
+                              "%d Sys::handleEvent EventType::PacketSent, sender id %d, recv id %d, flow id %d, child flow id %d", node->id,
+                              sendhd->senderNodeId, sendhd->receiverNodeId, sendhd->flow_id, sendhd->child_flow_id);
 #ifdef NS3_MTP
         Sys::sysCriticalSection cs;
 #endif
@@ -2229,7 +2286,8 @@ void Sys::handleEvent(void *arg)
     }
     else if (event == EventType::PacketSentFinshed)
     {
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketSentFinshed", node->id);
+        if (node->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "%d Sys::handleEvent EventType::PacketSentFinshed", node->id);
         AstraSim::SendPacketEventHandlerData *ehd = (AstraSim::SendPacketEventHandlerData *)arg;
         if (ehd->owner != nullptr)
             ehd->owner->sendcallback(ehd);

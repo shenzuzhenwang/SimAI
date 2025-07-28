@@ -615,7 +615,7 @@ def analysis_template(args, default_parameters):
                           'nvlink_bw': '2880Gbps','nv_latency': '0.000025ms', 'latency': '0.0005ms',
                           'bandwidth': '400Gbps', 'asw_switch_num': 8,  'nics_per_aswitch': 64,
                           'psw_switch_num': 64, 'ap_bandwidth': "400Gbps", 'asw_per_psw' : 64,
-                          'dpu_per_sw':0,'dpu_bw':'10000Gbps','dpu_latency':'0s'}
+                          'dpu_per_sw':0,'dpu_bw':'1600Gbps','dpu_latency':'0s'}
     parameters = {}
     parameters['topology'] = args.topology
     parameters['rail_optimized'] = bool(args.ro)

@@ -58,7 +58,8 @@ Workload::Workload(std::string run_name, Sys *generator, std::string name, int T
     this->seprate_log = seprate_log;
     // 读入文件并生成每一层
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Initializing workload with name: %d", generator->id);
+    if (generator->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Initializing workload with name: %d", generator->id);
     this->initialized = initialize_workload(name);
     if (this->initialized == false)
     {
@@ -94,7 +95,8 @@ void Workload::initialize_stat_files()
 void Workload::call(EventType event, CallData *data)
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Workload %d call event: %d", generator->id, static_cast<int>(event));
+    if (generator->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Workload %d call event: %d", generator->id, static_cast<int>(event));
     if (counter > 0)
     {
         if (generator->id == 0)
@@ -920,8 +922,9 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         // 如果还有延迟，注册等待事件，进行计算等待
         if (counter > 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d try_register_event EventType::Workload_Wait %d", generator->id,
-                              index, counter);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d try_register_event EventType::Workload_Wait %d", generator->id,
+                                  index, counter);
             generator->try_register_event(this, EventType::Workload_Wait, NULL, counter);
             return;
         }
@@ -934,7 +937,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
             {
                 layers[index]->fwd_pass_comm_size = 4096;
             }
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d issue_forward_pass_comm", generator->id, index);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d issue_forward_pass_comm", generator->id, index);
             layers[index]->issue_forward_pass_comm(SchedulingPolicy::None, CollectiveBarrier::Blocking);
             return;
         }
@@ -949,7 +953,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
             index--;
         }
         // log打印的是这里，无论如何必须延时1us
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d register_event EventType::General %d", generator->id, index, 1);
+        if (generator->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fw index: %d register_event EventType::General %d", generator->id, index, 1);
         generator->register_event(this, EventType::General, NULL, 1);
         return;
     }
@@ -965,8 +970,9 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         // 模拟计算，意思：ns3的仿真时间经过 权重梯度计算 时间后，调用Workload call进而再次调用此函数iterate_hybrid_parallel_Transformer_fwd_in_bckwd
         if (counter > 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call wg index: %d try_register_event EventType::Workload_Wait %d", generator->id,
-                              index, counter);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call wg index: %d try_register_event EventType::Workload_Wait %d", generator->id,
+                                  index, counter);
             generator->try_register_event(this, EventType::Workload_Wait, NULL, counter);
             return;
         }
@@ -974,7 +980,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         if (!collective_issued)
         {
             collective_issued = true;
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call wg index: %d issue_weight_grad_comm", generator->id, index);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call wg index: %d issue_weight_grad_comm", generator->id, index);
             layers[index]->issue_weight_grad_comm(SchedulingPolicy::FIFO, CollectiveBarrier::Non_Blocking);
         }
         // 等待反向输入梯度通信完成；即，如果当前层的输入梯度通信还没有完成，则started_waiting_for_input_grad中记录现在的仿真时间
@@ -1004,7 +1011,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         {
             current_state = LoopState::Input_Gradient;
         }
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call wg index: %d register_event EventType::General %d", generator->id, index, 1);
+        if (generator->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call wg index: %d register_event EventType::General %d", generator->id, index, 1);
         // 意思：ns3的仿真时间经过 1us 后，调用Workload call进而再次调用此函数iterate_hybrid_parallel_Transformer_fwd_in_bckwd
         generator->register_event(this, EventType::General, NULL, 1);
         return;
@@ -1038,8 +1046,9 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         // 	模拟计算，如果还有延迟，注册等待事件，进行计算等待
         if (counter > 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call ig index: %d try_register_event EventType::Workload_Wait %d", generator->id,
-                              index, counter);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call ig index: %d try_register_event EventType::Workload_Wait %d", generator->id,
+                                  index, counter);
             generator->try_register_event(this, EventType::Workload_Wait, NULL, counter);
             return;
         }
@@ -1047,7 +1056,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         if (!collective_issued)
         {
             collective_issued = true;
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call ig index: %d issue_input_grad_comm", generator->id, index);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call ig index: %d issue_input_grad_comm", generator->id, index);
             layers[index]->issue_input_grad_comm(SchedulingPolicy::LIFO, CollectiveBarrier::Blocking);
             return;
         }
@@ -1056,7 +1066,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         collective_issued = false;
         delay_loaded = false;
         current_state = LoopState::Weight_Gradient;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call ig index: %d register_event EventType::General %d", generator->id, index, 1);
+        if (generator->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call ig index: %d register_event EventType::General %d", generator->id, index, 1);
         generator->register_event(this, EventType::General, NULL, 1);
         return;
     }
@@ -1077,8 +1088,9 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         // 模拟计算
         if (counter > 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fwd_in_bckwd index: %d try_register_event EventType::Workload_Wait %d",
-                              generator->id, index, counter);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fwd_in_bckwd index: %d try_register_event EventType::Workload_Wait %d",
+                                  generator->id, index, counter);
             generator->try_register_event(this, EventType::Workload_Wait, NULL, counter);
             return;
         }
@@ -1086,7 +1098,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         if (!collective_issued)
         {
             collective_issued = true;
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fwd_in_bckwd index: %d issue_forward_pass_comm", generator->id, index);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fwd_in_bckwd index: %d issue_forward_pass_comm", generator->id, index);
             layers[index]->issue_forward_pass_comm(SchedulingPolicy::None, CollectiveBarrier::Blocking);
             return;
         }
@@ -1098,8 +1111,9 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         {
             current_state = LoopState::Input_Gradient;
         }
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fwd_in_bckwd index: %d register_event EventType::General %d", generator->id, index,
-                          1);
+        if (generator->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "workload %d::call fwd_in_bckwd index: %d register_event EventType::General %d", generator->id,
+                              index, 1);
         generator->register_event(this, EventType::General, NULL, 1);
         return;
     }

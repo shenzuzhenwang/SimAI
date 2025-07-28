@@ -73,7 +73,8 @@ Layer::Layer(std::string id, int layer_num, Sys *generator, Workload *workload, 
 void Layer::call(EventType event, CallData *mdata)
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d call event %d", generator->id, layer_num, (int)event);
+    if (generator->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d call event %d", generator->id, layer_num, (int)event);
     if (event == EventType::Wight_Grad_Comm_Finished)
     {
         // 记录当前时间
@@ -110,7 +111,8 @@ void Layer::call(EventType event, CallData *mdata)
         // 只有一个数据集且阻塞，必须等它完成才能进入下一阶段。
         if (weight_grad_datasets.size() == 1 && wg_barrier == CollectiveBarrier::Blocking)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d weight gradient 1 datasets and Blocking", generator->id, layer_num);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d weight gradient 1 datasets and Blocking", generator->id, layer_num);
             // 统计 工作线程在等待 WG 通信上的等待时间
             total_waiting_for_wg_comm += weight_grad_datasets[data]->finish_tick - weight_grad_datasets[data]->creation_tick;
             // 更新流信息、删除对象、清理数据集
@@ -128,7 +130,8 @@ void Layer::call(EventType event, CallData *mdata)
         // 有等待队列（曾经有workload通过 is_weight_grad_comm_finished_blocking() 检测通信是否完成）
         else if (started_waiting_for_weight_grad.size() > 0)
         {
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d started_waiting_for_weight_grad>0", generator->id, layer_num);
+            if (generator->id == 0)
+                NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d started_waiting_for_weight_grad>0", generator->id, layer_num);
             // 统计它的 等待时间，并移除
             total_waiting_for_wg_comm += weight_grad_datasets[data]->finish_tick - started_waiting_for_weight_grad.front();
             started_waiting_for_weight_grad.pop_front();
@@ -144,7 +147,8 @@ void Layer::call(EventType event, CallData *mdata)
             return;
         }
         // 普通情况；无需推进 workload 状态机继续执行
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d normal Workload not call", generator->id, layer_num);
+        if (generator->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d normal Workload not call", generator->id, layer_num);
         update_stream_stats(weight_grad_datasets[data]);
         int dataset_streams = weight_grad_datasets[data]->total_streams;
         delete weight_grad_datasets[data];
@@ -1226,7 +1230,8 @@ void Layer::issue_forward_pass_comm(SchedulingPolicy pref_scheduling, Collective
     fwd_pass_datasets[fp->my_id] = fp;
     fp->set_notifier(this, EventType::Fwd_Comm_Finished);
 #endif
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Fwd_Comm_Finished set_notifier success");
+    if (generator->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Fwd_Comm_Finished set_notifier success");
 }
 void Layer::issue_input_grad_comm(SchedulingPolicy pref_scheduling, CollectiveBarrier barrier)
 {
@@ -1410,7 +1415,8 @@ void Layer::issue_weight_grad_comm(SchedulingPolicy pref_scheduling, CollectiveB
         wg = generator->generate_all_reduce(weight_grad_comm_size, weight_grad_comm_involved_dimensions, pref_scheduling, layer_num,
                                             EventType::Wight_Grad_Comm_Finished, this);
 #else
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d issue wg gen allreduce", generator->id, layer_num);
+        if (generator->id == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d Layer %d issue wg gen allreduce", generator->id, layer_num);
         wg = generator->generate_all_reduce(weight_grad_comm_size, weight_grad_comm_involved_dimensions, pref_scheduling, layer_num);
 #endif
         // 如果所有维度都禁用，则不发起通信

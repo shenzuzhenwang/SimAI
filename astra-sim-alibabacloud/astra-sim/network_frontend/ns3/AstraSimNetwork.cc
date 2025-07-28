@@ -151,8 +151,9 @@ public:
         AstraSim::RecvPacketEventHadndlerData *ehd = (AstraSim::RecvPacketEventHadndlerData *)t.fun_arg;
         AstraSim::EventType event = ehd->event;
         tag = ehd->flowTag.tag_id;
-        NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channdl id %d", src, rank, tag,
-                          ehd->flowTag.channel_id);
+        if (rank == 0)
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channel id %d", src, rank, tag,
+                              ehd->flowTag.channel_id);
 
         if (recvHash.find(make_pair(tag, make_pair(t.src, t.dest))) != recvHash.end())
         {
@@ -201,18 +202,22 @@ public:
             if (expeRecvHash.find(make_pair(tag, make_pair(t.src, t.dest))) == expeRecvHash.end())
             {
                 expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))] = t;
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  " [Packet arrived late, registering first] recvHash do not find expeRecvHash.new make src  %d dest  %d t.count:  "
-                                  "%llu channel_id  %d current_flow_id  %d",
-                                  t.src, t.dest, t.count, tag, flowTag.current_flow_id);
+                if (rank == 0)
+                    NcclLog->writeLog(
+                        NcclLogLevel::DEBUG,
+                        " [Packet arrived late, registering first] recvHash do not find expeRecvHash.new make src  %d dest  %d t.count:  "
+                        "%llu channel_id  %d current_flow_id  %d",
+                        t.src, t.dest, t.count, tag, flowTag.current_flow_id);
             }
             else
             {
                 uint64_t expecount = expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))].count;
-                NcclLog->writeLog(NcclLogLevel::DEBUG,
-                                  " [Packet arrived late, re-registering] recvHash do not find expeRecvHash.add make src  %d dest  %d expecount:  %d "
-                                  "t.count:  %d tag_id  %d current_flow_id  %d",
-                                  t.src, t.dest, expecount, t.count, tag, flowTag.current_flow_id);
+                if (rank == 0)
+                    NcclLog->writeLog(
+                        NcclLogLevel::DEBUG,
+                        " [Packet arrived late, re-registering] recvHash do not find expeRecvHash.add make src  %d dest  %d expecount:  %d "
+                        "t.count:  %d tag_id  %d current_flow_id  %d",
+                        t.src, t.dest, expecount, t.count, tag, flowTag.current_flow_id);
             }
         }
 #ifdef NS3_MTP

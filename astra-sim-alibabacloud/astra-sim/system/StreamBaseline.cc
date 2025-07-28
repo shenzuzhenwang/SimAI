@@ -28,15 +28,17 @@ void StreamBaseline::init()
     {
         return;
     }
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run", owner->id, stream_num);
+    if (owner->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run", owner->id, stream_num);
     my_current_phase.algorithm->run(EventType::StreamInit, nullptr);
     if (steps_finished == 1)
     {
         queuing_delay.push_back(last_phase_change - creation_time);
     }
     queuing_delay.push_back(Sys::boostedTick() - last_phase_change);
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run finish, queuing_delay: %f", owner->id, stream_num,
-                      queuing_delay.back());
+    if (owner->id == 0)
+        NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run finish, queuing_delay: %f", owner->id, stream_num,
+                          queuing_delay.back());
     total_packets_sent = 1;
 }
 void StreamBaseline::call(EventType event, CallData *data)

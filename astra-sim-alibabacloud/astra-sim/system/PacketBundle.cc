@@ -51,12 +51,12 @@ void PacketBundle::send_to_NPU()
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
     generator->memBus->send_from_MA_to_NPU(transmition, size, needs_processing, send_back, this);
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "send_to_NPU done");
+    // NcclLog->writeLog(NcclLogLevel::DEBUG, "send_to_NPU done");
 }
 void PacketBundle::call(EventType event, CallData *data)
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    NcclLog->writeLog(NcclLogLevel::DEBUG, "packet bundle call");
+    // NcclLog->writeLog(NcclLogLevel::DEBUG, "packet bundle call");
     if (needs_processing == true)
     {
         needs_processing = false;

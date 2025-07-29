@@ -1,4 +1,4 @@
-/* 
+/*
 *Copyright (c) 2024, Alibaba Group;
 *Licensed under the Apache License, Version 2.0 (the "License");
 *you may not use this file except in compliance with the License.
@@ -16,71 +16,76 @@
 #include "MockNcclChannel.h"
 #include <cmath>
 
-namespace MockNccl {
-  MockNcclComm::MockNcclComm(int _rank,GroupType _type,MockNcclGroup* _GlobalGroup) :rank(_rank),type(_type),GlobalGroup(_GlobalGroup){
-    this->ringchannels = this->GlobalGroup->genringchannels(rank,type);
-    this->treechannels = this->GlobalGroup->gettreechannels(rank,type);
-    this->nvlschannels = this->GlobalGroup->get_nvls_channels(rank,type);
+namespace MockNccl
+{
+MockNcclComm::MockNcclComm(int _rank, GroupType _type, MockNcclGroup *_GlobalGroup) : rank(_rank), type(_type), GlobalGroup(_GlobalGroup)
+{
+    this->ringchannels = this->GlobalGroup->genringchannels(rank, type);
+    this->treechannels = this->GlobalGroup->gettreechannels(rank, type);
+    this->nvlschannels = this->GlobalGroup->get_nvls_channels(rank, type);
     // this->dpuchannels=this->GlobalGroup->getdpuchannels(rank,type);
     // this->nvlstreechannels = this->GlobalGroup->get_nvls_tree_channels(rank,type);
-    
-  }
+}
 
-  MockNcclComm::~MockNcclComm(){};
+MockNcclComm::~MockNcclComm() {};
 
-  std::map<int,std::map<int,std::vector<int>>> MockNcclComm::get_rings() {
-    std::map<int,std::map<int,std::vector<int>>> result;
-    for(auto it = ringchannels.begin(); it !=ringchannels.end(); it++) {
-      auto ring = it->second;
-      auto ring_id = it->first;
-      for(auto rank_it = ring.begin();rank_it != ring.end(); rank_it++) {
-        result[rank_it->first][ring_id]= rank_it->second;
-      }
+std::map<int, std::map<int, std::vector<int>>> MockNcclComm::get_rings()
+{
+    std::map<int, std::map<int, std::vector<int>>> result;
+    for (auto it = ringchannels.begin(); it != ringchannels.end(); it++)
+    {
+        auto ring = it->second;
+        auto ring_id = it->first;
+        for (auto rank_it = ring.begin(); rank_it != ring.end(); rank_it++)
+        {
+            result[rank_it->first][ring_id] = rank_it->second;
+        }
     }
     return result;
-  }
+}
 
-  MockNccl::TreeChannels MockNcclComm::get_treechannels(){
-    TreeChannels nvlschannel ;
-    nvlschannel[0][0]=ncclTree(-1,0,8,{});
-    nvlschannel[0][1]=ncclTree(-1,1,8,{});
-    nvlschannel[0][2]=ncclTree(-1,2,8,{});
-    nvlschannel[0][3]=ncclTree(-1,3,8,{});
-    nvlschannel[0][4]=ncclTree(-1,4,8,{});
-    nvlschannel[0][5]=ncclTree(-1,5,8,{});
-    nvlschannel[0][6]=ncclTree(-1,6,8,{});
-    nvlschannel[0][7]=ncclTree(-1,7,8,{});
-    nvlschannel[0][8]=ncclTree(-1,8,-1,{0,1,2,3,4,5,6,7});
+MockNccl::TreeChannels MockNcclComm::get_treechannels()
+{
+    TreeChannels nvlschannel;
+    nvlschannel[0][0] = ncclTree(-1, 0, 8, {});
+    nvlschannel[0][1] = ncclTree(-1, 1, 8, {});
+    nvlschannel[0][2] = ncclTree(-1, 2, 8, {});
+    nvlschannel[0][3] = ncclTree(-1, 3, 8, {});
+    nvlschannel[0][4] = ncclTree(-1, 4, 8, {});
+    nvlschannel[0][5] = ncclTree(-1, 5, 8, {});
+    nvlschannel[0][6] = ncclTree(-1, 6, 8, {});
+    nvlschannel[0][7] = ncclTree(-1, 7, 8, {});
+    nvlschannel[0][8] = ncclTree(-1, 8, -1, {0, 1, 2, 3, 4, 5, 6, 7});
     return nvlschannel;
-  }
-  MockNccl::TreeChannels MockNcclComm::get_dpuchannels(){
-    TreeChannels nvlschannel ;
+}
+MockNccl::TreeChannels MockNcclComm::get_dpuchannels()
+{
+    TreeChannels nvlschannel;
     vector<int> _down;
-    for(int i=0;i<64;i++){
-      nvlschannel[0][i]=ncclTree(-1,i,129,{});
-      _down.push_back(i);
+    for (int i = 0; i < 64; i++)
+    {
+        nvlschannel[0][i] = ncclTree(-1, i, 129, {});
+        _down.push_back(i);
     }
-    nvlschannel[0][129]=ncclTree(-1,129,-1,_down);
+    nvlschannel[0][129] = ncclTree(-1, 129, -1, _down);
     // nvlschannel[0][0]=ncclTree(-1,0,9,{});
     // nvlschannel[0][1]=ncclTree(-1,1,9,{});
     // nvlschannel[0][2]=ncclTree(-1,2,9,{});
     // nvlschannel[0][3]=ncclTree(-1,3,9,{});
     // nvlschannel[0][9]=ncclTree(-1,9,-1,{0,1,2,3});
     return nvlschannel;
-  }
-  MockNccl::TreeChannels MockNcclComm::get_nvls_channels(){
-    return this->nvlschannels;
-  }
+}
+MockNccl::TreeChannels MockNcclComm::get_nvls_channels() { return this->nvlschannels; }
 
-  MockNccl::NVLStreechannels MockNcclComm::get_nvls_tree_channels(){
-    return this->nvlstreechannels;
-  }
+MockNccl::NVLStreechannels MockNcclComm::get_nvls_tree_channels() { return this->nvlstreechannels; }
 
-  std::shared_ptr<void> MockNcclComm::get_flow_model(uint64_t data_size,AstraSim::ComType collective_type,int layer_num,State loopstate) {
-    return this->GlobalGroup->getFlowModels(type,rank,collective_type,data_size,layer_num,loopstate);
-  }
+std::shared_ptr<void> MockNcclComm::get_flow_model(uint64_t data_size, AstraSim::ComType collective_type, int layer_num, State loopstate)
+{
+    return this->GlobalGroup->getFlowModels(type, rank, collective_type, data_size, layer_num, loopstate);
+}
 
-  struct ncclInfo* MockNcclComm::get_algo_proto_info(uint64_t data_size,AstraSim::ComType collective_type){
-    return this->GlobalGroup->get_algo_proto_info(type,rank,collective_type,data_size);
-  }
+struct ncclInfo *MockNcclComm::get_algo_proto_info(uint64_t data_size, AstraSim::ComType collective_type)
+{
+    return this->GlobalGroup->get_algo_proto_info(type, rank, collective_type, data_size);
+}
 }

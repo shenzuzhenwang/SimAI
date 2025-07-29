@@ -926,6 +926,13 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_fin
         topof >> sid;
         node_type[sid] = 0;
     }
+    for (uint32_t i = 0; i < dpu_nvswitch_num; i++)
+    {
+        // DPU
+        uint32_t sid;
+        topof >> sid;
+        node_type[sid] = 2;
+    }
     for (uint32_t i = 0; i < node_num; i++)
     {
         if (node_type[i] == 0)

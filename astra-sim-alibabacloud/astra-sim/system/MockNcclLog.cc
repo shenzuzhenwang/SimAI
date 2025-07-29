@@ -1,4 +1,4 @@
-/* 
+/*
 *Copyright (c) 2024, Alibaba Group;
 *Licensed under the Apache License, Version 2.0 (the "License");
 *you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 */
 #include "MockNcclLog.h"
 
-MockNcclLog* MockNcclLog::instance = nullptr;
-NcclLogLevel MockNcclLog::logLevel = NcclLogLevel::DEBUG;
+MockNcclLog *MockNcclLog::instance = nullptr;
+NcclLogLevel MockNcclLog::logLevel = NcclLogLevel::INFO;
 std::mutex MockNcclLog::mtx;
 std::string MockNcclLog::LogName = "";

@@ -308,13 +308,14 @@ def SuperPod(parameters):
     print("psw_switch_num: " + str(parameters['psw_switch_num']))
     print("Creating Topology of totally " + str(segment_num) + " segment(s), totally "+ str(pod_num) + " pod(s)." )  
 
-    dpuPerSw=(int)(parameters['dpu_per_sw'])
-    dpuNum=(int)(parameters['dpu_per_sw'])*(int)(parameters['asw_switch_num'])
+    dpuPerSw = (int)(parameters['dpu_per_sw'])
+    dpuNum = (int)(parameters['dpu_per_sw'])*(int)(parameters['asw_switch_num'])
+    dpu_nv_switch_num = dpuNum
     nv_switch_num = (int)(parameters['gpu'] / parameters['gpu_per_server']) * parameters['nv_switch_per_server']
-    nodes = dpuNum+(int) (parameters['gpu'] + parameters['asw_switch_num'] + parameters['psw_switch_num']+ nv_switch_num ) # 
+    nodes = dpuNum + dpu_nv_switch_num + (int) (parameters['gpu'] + parameters['asw_switch_num'] + parameters['psw_switch_num'] + nv_switch_num ) # 
     servers = parameters['gpu'] / parameters['gpu_per_server']
     switch_nodes = (int)(parameters['psw_switch_num'] + parameters['asw_switch_num'] + nv_switch_num) # 
-    links = dpuNum+(int)(parameters['psw_switch_num']/pod_num * parameters['asw_switch_num'] + servers * parameters['gpu_per_server']
+    links = dpuNum + dpu_nv_switch_num + (int)(parameters['psw_switch_num']/pod_num * parameters['asw_switch_num'] + servers * parameters['gpu_per_server']
                   + servers * parameters['nv_switch_per_server'] * parameters['gpu_per_server']) # 
     if parameters['topology'] == 'DCN+':
         file_name = "DCN+SingleToR_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_"+parameters['bandwidth']+"_"+parameters['gpu_type']
@@ -322,16 +323,17 @@ def SuperPod(parameters):
         file_name = "No_Rail_Opti_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_SingleToR_"+parameters['bandwidth']+"_"+parameters['gpu_type']
     with open(file_name, 'w') as f:
         print(file_name)
-        first_line = str(nodes)+" "+str(parameters['gpu_per_server'])+" "+str(nv_switch_num)+" "+str(switch_nodes-nv_switch_num)+" "+str(int(links))+" "+str(parameters['gpu_type'])+" "+str(dpuNum)
+        first_line = str(nodes)+" "+str(parameters['gpu_per_server'])+" "+str(nv_switch_num)+" "+str(switch_nodes-nv_switch_num)+" "+str(int(links))+" "+str(parameters['gpu_type'])+" "+str(dpuNum)+" "+str(dpu_nv_switch_num)
         f.write(first_line)
         f.write('\n')
         nv_switch = []
         asw_switch = []
         psw_switch = []
         dsw_switch = []
-        dpus=[]
+        dpus = []
+        dpu_nv_switch = []
         sec_line = ""
-        nnodes = nodes - switch_nodes-dpuNum
+        nnodes = nodes - switch_nodes - dpuNum - dpu_nv_switch_num
         for i in range(nnodes, nodes):
             sec_line = sec_line + str(i) + " "
             if len(nv_switch) < nv_switch_num:
@@ -340,8 +342,10 @@ def SuperPod(parameters):
                 asw_switch.append(i)
             elif len(psw_switch) < parameters['psw_switch_num']:
                 psw_switch.append(i)
-            elif len(dpus)<dpuNum:
+            elif len(dpus) < dpuNum:
                 dpus.append(i)
+            elif len(dpu_nv_switch) < dpu_nv_switch_num:
+                dpu_nv_switch.append(i)
             else:
                 dsw_switch.append(i)
         f.write(sec_line)
@@ -375,13 +379,25 @@ def SuperPod(parameters):
                     line = str(i) + " " + str(j) +" "+ str(parameters['ap_bandwidth'])+" " +str(parameters['latency'])+" "+str(parameters['error_rate'])
                     f.write(line)
                     f.write('\n')
-        dpuIdx=0
-        for i in asw_switch:
-            for j in range(dpuPerSw):
-                line = str(i) + " " + str(dpus[dpuIdx]) +" "+ str(parameters['dpu_bw'])+" " +str(parameters['dpu_latency'])+" "+str(parameters['error_rate'])
-                dpuIdx=dpuIdx+1
-                f.write(line)
-                f.write('\n')
+        # dpuIdx=0
+        # for i in asw_switch:
+        #     for j in range(dpuPerSw):
+        #         line = str(i) + " " + str(dpu[dpuIdx]) +" "+ str(parameters['dpu_bw'])+" " +str(parameters['dpu_latency'])+" "+str(parameters['error_rate'])
+        #         dpuIdx=dpuIdx+1
+        #         f.write(line)
+        #         f.write('\n')
+        for asw_idx, asw in enumerate(asw_switch):
+            # 找出当前ASW下面的dpu编号范围
+            dpu_start = asw_idx * dpuPerSw
+            dpu_end = dpu_start + dpuPerSw
+            for dpu in dpus[dpu_start:dpu_end]:
+                line = f"{asw} {dpu} {parameters['dpu_bw']} {parameters['dpu_latency']} {parameters['error_rate']}"
+                f.write(line + "\n")
+        for idx, dpu in enumerate(dpus):
+            nv = dpu_nv_switch[idx]
+            line = f"{dpu} {nv} {parameters['nvlink_bw']} {parameters['nv_latency']} {parameters['error_rate']}"
+            f.write(line + "\n")
+        
 def No_Rail_Opti_SingleToR(parameters):
     nodes_per_asw = parameters['nics_per_aswitch']
     asw_switch_num_per_segment = 1

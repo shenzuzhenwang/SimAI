@@ -86,10 +86,11 @@ uint32_t enable_trace = 1;
 
 uint32_t buffer_size = 16;
 
-uint32_t node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server, dpu_num, g_dpu_per_switch;
+uint32_t node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server, dpu_num, dpu_nvswitch_num, g_dpu_per_switch;
 GPUType gpu_type;
 std::vector<int> NVswitchs;
 std::vector<int> g_Dpus;
+std::vector<int> DPU_NVswitchs;
 
 uint32_t qp_mon_interval = 100;
 uint32_t bw_mon_interval = 10000;
@@ -904,7 +905,7 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_fin
     {
         gpu_type = GPUType::NONE;
     }
-    topof >> dpu_num;
+    topof >> dpu_num >> dpu_nvswitch_num;
     std::vector<uint32_t> node_type(node_num, 0);
     for (uint32_t i = 0; i < nvswitch_num; i++)
     {

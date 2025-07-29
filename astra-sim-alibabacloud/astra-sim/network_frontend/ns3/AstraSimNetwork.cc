@@ -50,6 +50,8 @@ extern std::map<std::pair<std::pair<int, int>, int>, AstraSim::ncclFlowTag> rece
 extern uint32_t node_num, switch_num, link_num, trace_num, nvswitch_num, gpus_per_server;
 extern GPUType gpu_type;
 extern std::vector<int> NVswitchs;
+extern std::vector<int> g_Dpus;
+extern std::vector<int> DPU_NVswitchs;
 
 struct sim_event
 {
@@ -322,9 +324,9 @@ int main(int argc, char *argv[])
 
     main1(user_param.network_topo, user_param.network_conf);
 
-    // nodesnum= gpuNode+nvswitch
-    int nodes_num = node_num - switch_num - dpu_num;
-    int gpu_num = node_num - nvswitch_num - switch_num - dpu_num;
+    // gpu + nvswitch + switch + dpu + dpu_nvswitch
+    int nodes_num = node_num - switch_num - dpu_num - dpu_nvswitch_num;
+    int gpu_num = node_num - nvswitch_num - switch_num - dpu_num - dpu_nvswitch_num;
 
     std::map<int, int> node2nvswitch;
     for (int i = 0; i < gpu_num; ++i)
@@ -337,11 +339,15 @@ int main(int argc, char *argv[])
         NVswitchs.push_back(i);
     }
 
-    g_Dpus = std::vector<int>();
-    for (int i = node_num - dpu_num; i < node_num; i++)
+    for (int i = node_num - dpu_num - dpu_nvswitch_num; i < node_num - dpu_nvswitch_num; i++)
+    {
+        node2nvswitch[i] = dpu_num + i;
+        g_Dpus.push_back(i);
+    }
+    for (int i = node_num - dpu_nvswitch_num; i < node_num; i++)
     {
         node2nvswitch[i] = i;
-        g_Dpus.push_back(i);
+        DPU_NVswitchs.push_back(i);
     }
 
     printf("NVSW:[");
@@ -365,7 +371,7 @@ int main(int argc, char *argv[])
     std::vector<ASTRASimNetwork *> networks(node_num, nullptr);
     std::map<int, AstraSim::Sys *> systems;
 
-    for (int j = 0; j < nodes_num; j++)
+    for (int j = 0; j < nodes_num; j++) // gpu + nvswitch
     {
         networks[j] = new ASTRASimNetwork(j, 0);
         systems[j] = new AstraSim::Sys(networks[j], nullptr, j, 0, 1, {nodes_num}, {1}, "", user_param.workload, 1, 1, 1, 1, 0, RESULT_PATH, "test1",
@@ -378,7 +384,7 @@ int main(int argc, char *argv[])
         systems[i]->workload->fire();
     }
 
-    for (int j = node_num - dpu_num; j < node_num; j++)
+    for (int j = node_num - dpu_num - dpu_nvswitch_num; j < node_num; j++) // dpu + dpu_nvswitch
     {
         networks[j] = new ASTRASimNetwork(j, 0);
         systems[j] = new AstraSim::Sys(networks[j], nullptr, j, 0, 1, {nodes_num}, {1}, "", user_param.workload, 1, 1, 1, 1, 0, RESULT_PATH, "test1",
@@ -387,7 +393,7 @@ int main(int argc, char *argv[])
         systems[j]->num_gpus = nodes_num - nvswitch_num;
     }
 
-    for (int i = node_num - dpu_num; i < node_num; i++)
+    for (int i = node_num - dpu_num - dpu_nvswitch_num; i < node_num; i++)
     {
         systems[i]->workload->fire();
     }

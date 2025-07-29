@@ -352,17 +352,18 @@ int main(int argc, char *argv[])
 
     printf("NVSW:[");
     for (auto nvsw : NVswitchs)
-    {
         cout << nvsw << " ";
-    }
     cout << "]" << endl;
 
     printf("DPUS:[");
-    for (auto nvsw : g_Dpus)
-    {
-        cout << nvsw << " ";
-    }
+    for (auto dpu : g_Dpus)
+        cout << dpu << " ";
     cout << "]" << endl;
+    printf("DPU_NVSW:[");
+    for (auto dpunvsw : DPU_NVswitchs)
+        cout << dpunvsw << " ";
+    cout << "]" << endl;
+
     g_dpu_per_switch = dpu_num / switch_num;
     LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO);
     LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
@@ -375,7 +376,7 @@ int main(int argc, char *argv[])
     {
         networks[j] = new ASTRASimNetwork(j, 0);
         systems[j] = new AstraSim::Sys(networks[j], nullptr, j, 0, 1, {nodes_num}, {1}, "", user_param.workload, 1, 1, 1, 1, 0, RESULT_PATH, "test1",
-                                       true, false, gpu_type, {gpu_num}, NVswitchs, gpus_per_server, g_Dpus, g_dpu_per_switch);
+                                       true, false, gpu_type, {gpu_num}, NVswitchs, gpus_per_server, g_Dpus, g_dpu_per_switch, DPU_NVswitchs);
         systems[j]->nvswitch_id = node2nvswitch[j];
         systems[j]->num_gpus = nodes_num - nvswitch_num;
     }
@@ -388,7 +389,7 @@ int main(int argc, char *argv[])
     {
         networks[j] = new ASTRASimNetwork(j, 0);
         systems[j] = new AstraSim::Sys(networks[j], nullptr, j, 0, 1, {nodes_num}, {1}, "", user_param.workload, 1, 1, 1, 1, 0, RESULT_PATH, "test1",
-                                       true, false, gpu_type, {gpu_num}, NVswitchs, gpus_per_server, g_Dpus, g_dpu_per_switch);
+                                       true, false, gpu_type, {gpu_num}, NVswitchs, gpus_per_server, g_Dpus, g_dpu_per_switch, DPU_NVswitchs);
         systems[j]->nvswitch_id = node2nvswitch[j];
         systems[j]->num_gpus = nodes_num - nvswitch_num;
     }

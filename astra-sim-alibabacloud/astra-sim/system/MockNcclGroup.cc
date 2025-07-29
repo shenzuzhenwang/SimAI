@@ -25,7 +25,7 @@ using namespace std;
 namespace MockNccl
 {
 MockNcclGroup::MockNcclGroup(int _ngpus, int _gpus_per_nodes, int _TP_size, int _DP_size, int _PP_size, int _EP_size, int _DP_EP_size,
-                             std::vector<int> _NVSwitch, GPUType _gpu_type, std::vector<int> _Dpus, int _dpu_per_sw)
+                             std::vector<int> _NVSwitch, GPUType _gpu_type, std::vector<int> _Dpus, int _dpu_per_sw, std::vector<int> _DpuNVSwitch)
     : g_flow_id(0), gpu_type(_gpu_type)
 {
     /*init groups
@@ -101,7 +101,7 @@ MockNcclGroup::MockNcclGroup(int _ngpus, int _gpus_per_nodes, int _TP_size, int 
                 NVSwitchs.push_back(_NVSwitch[idx]);
                 GroupIndex[std::make_pair(_NVSwitch[idx], DP)] = all_group_idx;
             }
-            AllGroups[all_group_idx] = GroupInfo(all_group_idx, DP, DPnodes.size(), _DP_size, ranks, NVSwitchs, _Dpus, _dpu_per_sw);
+            AllGroups[all_group_idx] = GroupInfo(all_group_idx, DP, DPnodes.size(), _DP_size, ranks, NVSwitchs, _Dpus, _dpu_per_sw, _DpuNVSwitch);
             all_group_idx++;
         }
     }

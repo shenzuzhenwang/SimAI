@@ -209,7 +209,8 @@ public:
     Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int num_passes, std::vector<int> physical_dims,
         std::vector<int> queues_per_dim, std::string my_sys, std::string my_workload, float comm_scale, float compute_scale, float injection_scale,
         int total_stat_rows, int stat_row, std::string path, std::string run_name, bool seprate_log, bool rendezvous_enabledstd, GPUType _gpu_type,
-        std::vector<int> _all_gpus, std::vector<int> _NVSwitchs, int _ngpus_per_node, std::vector<int> _Dpus, int _dpu_per_sw);
+        std::vector<int> _all_gpus, std::vector<int> _NVSwitchs, int _ngpus_per_node, std::vector<int> _Dpus, int _dpu_per_sw,
+        std::vector<int> _DpuNVswitchs);
 
     void iterate();
     bool initialize_sys(std::string name);

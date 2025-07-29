@@ -119,7 +119,8 @@ Sys::~Sys()
 Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int num_passes, std::vector<int> physical_dims,
          std::vector<int> queues_per_dim, std::string my_sys, std::string my_workload, float comm_scale, float compute_scale, float injection_scale,
          int total_stat_rows, int stat_row, std::string path, std::string run_name, bool seprate_log, bool rendezvous_enabled, GPUType _gpu_type,
-         std::vector<int> _all_gpus, std::vector<int> _NVSwitchs, int _ngpus_per_node, std::vector<int> _Dpus, int _dpu_per_sw)
+         std::vector<int> _all_gpus, std::vector<int> _NVSwitchs, int _ngpus_per_node, std::vector<int> _Dpus, int _dpu_per_sw,
+         std::vector<int> _DpuNVswitchs)
 {
     scheduler_unit = nullptr;
     vLevels = nullptr;
@@ -163,6 +164,7 @@ Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int n
     this->ngpus_per_node = _ngpus_per_node;
     this->Dpus = _Dpus;
     this->dpuPerSwitch = _dpu_per_sw;
+    this->DpuNVswitchs = _DpuNVswitchs;
     if ((id + npu_offset + 1) > all_generators.size())
     {
         all_generators.resize(id + npu_offset + 1);
@@ -1401,7 +1403,7 @@ bool Sys::mock_nccl_grobal_group_init()
         int EP_size = workload->expert_parallel_npu_group;
         int DP_EP_size = DP_size / EP_size;
         GlobalGroup = new MockNccl::MockNcclGroup(all_gpus[0], ngpus_per_node, TP_size, DP_size, PP_size, EP_size, DP_EP_size, NVSwitchs, gpu_type,
-                                                  Dpus, dpuPerSwitch);
+                                                  Dpus, dpuPerSwitch, DpuNVswitchs);
         return true;
     }
 }

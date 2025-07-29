@@ -139,7 +139,7 @@ int NcclTreeFlowModel::get_non_zero_latency_packets() { return (nodes_in_ring - 
 void NcclTreeFlowModel::run(EventType event, CallData *data)
 {
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    if (id == 0)
+    if (Print_ID >= 0 && id == Print_ID)
         NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel %d run event: %d", id, static_cast<int>(event));
     BasicEventHandlerData *ehd = (BasicEventHandlerData *)data;
     if (event == EventType::General)
@@ -198,7 +198,7 @@ void NcclTreeFlowModel::run(EventType event, CallData *data)
             return;
         }
 #endif
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG,
                               "PacketReceived sender_node:  %d recevier  %d current_flow id:  %d channel_id:  %d tag_id  %d free_packets  %d "
                               "next_flow_list.size %d",
@@ -224,7 +224,7 @@ void NcclTreeFlowModel::run(EventType event, CallData *data)
                 break;
             }
         }
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "next_flow_list.size %d", next_flow_list.size());
         for (int next_flow_id : next_flow_list)
         {
@@ -318,7 +318,7 @@ void NcclTreeFlowModel::run(EventType event, CallData *data)
         int sent_flow_id = flowTag.current_flow_id;
         int channel_id = flowTag.channel_id;
         std::vector<int> next_flow_list = flowTag.tree_flow_list;
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "PacketSentFinshed src %d dst %d channel_id %d flow_id %d", flowTag.sender_node,
                               flowTag.receiver_node, flowTag.channel_id, flowTag.current_flow_id);
         reduce(channel_id, sent_flow_id);
@@ -417,7 +417,7 @@ void NcclTreeFlowModel::release_packets(int channel_id, int flow_id, uint64_t me
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
     if (NPU_to_MA == true)
     {
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_MA", id,
                               id, processed, send_back, channel_id, flow_id);
         // send_to_MA register_event PacketBundle::call 1us后
@@ -425,7 +425,7 @@ void NcclTreeFlowModel::release_packets(int channel_id, int flow_id, uint64_t me
     }
     else
     {
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d NcclTreeFlowModelid %d processed %d send_back %d channel_id %d flow_id %d send_to_NPU", id,
                               id, processed, send_back, channel_id, flow_id);
         (new PacketBundle(stream->owner, stream, {}, processed, send_back, message_size, transmition, channel_id, flow_id))->send_to_NPU();
@@ -443,7 +443,7 @@ void NcclTreeFlowModel::process_stream_count(int channel_id)
     {
         _stream_count[channel_id]--;
     }
-    if (id == 0)
+    if (Print_ID >= 0 && id == Print_ID)
         NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel::process_stream_count channel_id %d _stream_count %d", channel_id,
                           _stream_count[channel_id]);
     if (_stream_count[channel_id] == 0 && stream->state != StreamState::Dead)
@@ -522,13 +522,13 @@ void NcclTreeFlowModel::insert_packets(int channel_id, int flow_id)
         NPU_to_MA = true;
         release_packets(channel_id, flow_id, message_size);
         (*zero_latency_packets)[channel_id]--;
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "id: %d (*zero_latency_packets)[channel_id]: %d ", id, (*zero_latency_packets)[channel_id]);
         return;
     }
     else if ((*non_zero_latency_packets)[channel_id] > 0)
     {
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] > 0", id);
         uint64_t message_size = f.flow_size;
         packets[std::make_pair(channel_id, flow_id)].push_back(
@@ -554,7 +554,7 @@ void NcclTreeFlowModel::insert_packets(int channel_id, int flow_id)
         NPU_to_MA = false;
         release_packets(channel_id, flow_id, message_size); // send_to_NPU/MA 模拟1us后数据包才开始网络传输
         (*non_zero_latency_packets)[channel_id]--;
-        if (id == 0)
+        if (Print_ID >= 0 && id == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "id:  %d (*non_zero_latency_packets)[channel_id] : %d ", id,
                               (*non_zero_latency_packets)[channel_id]);
         return;
@@ -573,7 +573,7 @@ bool NcclTreeFlowModel::ready(int channel_id, int flow_id)
         }
         if (!enabled || packets[std::make_pair(channel_id, flow_id)].size() == 0 || _stream_count[channel_id] == 0)
         {
-            if (id == 0)
+            if (Print_ID >= 0 && id == Print_ID)
                 NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel not ready!");
             return false;
         }
@@ -659,7 +659,7 @@ void NcclTreeFlowModel::exit()
     }
 #endif
     stream->owner->proceed_to_next_vnet_baseline((StreamBaseline *)stream);
-    if (id == 0)
+    if (Print_ID >= 0 && id == Print_ID)
         NcclLog->writeLog(NcclLogLevel::DEBUG, "NcclTreeFlowModel exit");
     return;
 }

@@ -28,7 +28,7 @@ void StreamBaseline::init()
     {
         return;
     }
-    if (owner->id == 0)
+    if (Print_ID >= 0 && owner->id == Print_ID)
         NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run", owner->id, stream_num);
     my_current_phase.algorithm->run(EventType::StreamInit, nullptr);
     if (steps_finished == 1)
@@ -36,7 +36,7 @@ void StreamBaseline::init()
         queuing_delay.push_back(last_phase_change - creation_time);
     }
     queuing_delay.push_back(Sys::boostedTick() - last_phase_change);
-    if (owner->id == 0)
+    if (Print_ID >= 0 && owner->id == Print_ID)
         NcclLog->writeLog(NcclLogLevel::DEBUG, "Sys %d stream %d StreamBaseline::algorithm->run finish, queuing_delay: %f", owner->id, stream_num,
                           queuing_delay.back());
     total_packets_sent = 1;

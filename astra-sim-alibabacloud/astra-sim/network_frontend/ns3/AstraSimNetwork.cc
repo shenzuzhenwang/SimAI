@@ -153,7 +153,7 @@ public:
         AstraSim::RecvPacketEventHadndlerData *ehd = (AstraSim::RecvPacketEventHadndlerData *)t.fun_arg;
         AstraSim::EventType event = ehd->event;
         tag = ehd->flowTag.tag_id;
-        if (rank == 0)
+        if (Print_ID >= 0 && rank == Print_ID)
             NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channel id %d", src, rank, tag,
                               ehd->flowTag.channel_id);
 
@@ -204,7 +204,7 @@ public:
             if (expeRecvHash.find(make_pair(tag, make_pair(t.src, t.dest))) == expeRecvHash.end())
             {
                 expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))] = t;
-                if (rank == 0)
+                if (Print_ID >= 0 && rank == Print_ID)
                     NcclLog->writeLog(
                         NcclLogLevel::DEBUG,
                         " [Packet arrived late, registering first] recvHash do not find expeRecvHash.new make src  %d dest  %d t.count:  "
@@ -214,7 +214,7 @@ public:
             else
             {
                 uint64_t expecount = expeRecvHash[make_pair(tag, make_pair(t.src, t.dest))].count;
-                if (rank == 0)
+                if (Print_ID >= 0 && rank == Print_ID)
                     NcclLog->writeLog(
                         NcclLogLevel::DEBUG,
                         " [Packet arrived late, re-registering] recvHash do not find expeRecvHash.add make src  %d dest  %d expecount:  %d "

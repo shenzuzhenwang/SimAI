@@ -36,6 +36,8 @@ enum class NcclLogLevel
     ERROR
 };
 
+constexpr int Print_ID = 129; // 打印日志的节点ID，-1表示打印所有
+
 class MockNcclLog
 {
 private:

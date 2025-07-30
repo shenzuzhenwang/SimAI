@@ -1,8 +1,8 @@
 #in-network aggregation allreduce bash
 set -e
 
-TOPO="64g_1gps_SingleToR_25Gbps_H100_1dps"
-WORKLOAD="example/1750Mallreduce.txt"   # 你可按需指定PS专用 workload
+TOPO="64g_1gps_SingleToR_400Gbps_H100_1dps"
+WORKLOAD="example/28gallreduce.txt"   # 你可按需指定PS专用 workload
 CONF="astra-sim-alibabacloud/inputs/config/DPU.conf"
 RUN_LOG="sim_ps_run.log"
 ENDTOEND="ncclFlowModel_EndToEnd.csv"

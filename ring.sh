@@ -1,9 +1,9 @@
 #ring allreduce bash
 set -e
 
-TOPO="64g_1gps_SingleToR_25Gbps_H100"
-WORKLOAD="example/16Mallreduce.txt"
-CONF="astra-sim-alibabacloud/inputs/config/SimAI.conf"
+TOPO="64g_1gps_SingleToR_400Gbps_H100"
+WORKLOAD="example/28gallreduce.txt"
+CONF="astra-sim-alibabacloud/inputs/config/RING.conf"
 RUN_LOG="sim_run.log"
 ENDTOEND="ncclFlowModel_EndToEnd.csv"
 THREADS=$(nproc)    # 自动获取逻辑核心数

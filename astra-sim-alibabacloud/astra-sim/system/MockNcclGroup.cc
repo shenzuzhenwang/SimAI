@@ -1169,7 +1169,7 @@ FlowModels MockNcclGroup::genAllReduceMultiDpuFlowModels(GroupInfo gp_info, uint
     std::vector<int> last_chunk_send_flow_id(num_gpus, -1); // 每个GPU最近一次发送流id
 
     // 遍历每个chunk，分配到某个DPU
-    for (uint64_t chunk_idx = 0; chunk_idx < num_chunks; ++chunk_idx)
+    for (int chunk_idx = 0; chunk_idx < num_chunks; ++chunk_idx)
     {
         int dpuId = dpus[chunk_idx % num_dpus]; // 轮转分配DPU
 
@@ -1239,8 +1239,8 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceDpuFlowMod
         gp_idx = GroupIndex[std::make_pair(rank, type)];
         gp_info = AllGroups[gp_idx];
     }
-    result = genAllReduceOneDpuFlowModels(gp_info, data_size, gp_info.Dpus[0]);
-    // result = genAllReduceMultiDpuFlowModels(gp_info, data_size, gp_info.Dpus);
+    // result = genAllReduceOneDpuFlowModels(gp_info, data_size, gp_info.Dpus[0]);
+    result = genAllReduceMultiDpuFlowModels(gp_info, data_size, gp_info.Dpus);
 
     for (auto [k, v] : result)
     {

@@ -1,7 +1,7 @@
 #ring allreduce bash
 set -e
 
-TOPO="64g_1gps_SingleToR_25Gbps_H100_1dps"
+TOPO="64g_1gps_SingleToR_25Gbps_H100"
 WORKLOAD="example/16Mallreduce.txt"
 CONF="astra-sim-alibabacloud/inputs/config/SimAI.conf"
 RUN_LOG="sim_run.log"

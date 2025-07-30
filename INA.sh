@@ -1,15 +1,16 @@
 #in-network aggregation allreduce bash
 set -e
 
-TOPO="No_Rail_Opti_64g_1gps_SingleToR_25Gbps_H100"
-WORKLOAD="example/workload_ps.txt"   # 你可按需指定PS专用 workload
-CONF="astra-sim-alibabacloud/inputs/config/SimAI.conf"
+TOPO="64g_1gps_SingleToR_25Gbps_H100_1dps"
+WORKLOAD="example/1750Mallreduce.txt"   # 你可按需指定PS专用 workload
+CONF="astra-sim-alibabacloud/inputs/config/DPU.conf"
 RUN_LOG="sim_ps_run.log"
-ENDTOEND="ncclFlowModel_EndToEnd_PS.csv"
+ENDTOEND="ncclFlowModel_EndToEnd.csv"
 THREADS=$(nproc)
 
 export AS_SEND_LAT=0
 export AS_NVLS_ENABLE=0
+export AS_LOG_LEVEL=0
 
 echo "[$(date)] Running AllReduce with In-Network Aggregation..." | tee "$RUN_LOG"
 
@@ -29,7 +30,9 @@ sudo true
 HEARTBEAT_PID=$!
 trap "kill $HEARTBEAT_PID 2>/dev/null; wait $HEARTBEAT_PID 2>/dev/null; echo -ne '\r$(printf '%*s\r' 80 '')'; exit" INT TERM EXIT
 
-sudo ./bin/SimAI_simulator -t "$THREADS" -w "$WORKLOAD" -n "$TOPO" -c "$CONF" -x ps >> "$RUN_LOG" 2>&1
+echo "sudo AS_SEND_LAT=$AS_SEND_LAT AS_NVLS_ENABLE=$AS_NVLS_ENABLE AS_LOG_LEVEL=$AS_LOG_LEVEL ./bin/SimAI_simulator -t \"$THREADS\" -w \"$WORKLOAD\" -n \"$TOPO\" -c \"$CONF\""
+
+sudo -E ./bin/SimAI_simulator -t "$THREADS" -w "$WORKLOAD" -n "$TOPO" -c "$CONF" >> "$RUN_LOG" 2>&1
 
 kill $HEARTBEAT_PID
 echo  # 保证结尾换行

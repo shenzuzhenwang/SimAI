@@ -286,7 +286,7 @@ Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int n
         sys_panic("Unable to initialize the workload layer because it can not open the workload file");
         return;
     }
-#if defined(NS3_MTP) || defined(NS3_MPI) || defined(PHY_MTP)
+    // #if defined(NS3_MTP) || defined(NS3_MPI) || defined(PHY_MTP)
     result = mock_nccl_grobal_group_init();
     if (result == false)
     {
@@ -297,7 +297,7 @@ Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int n
     {
         sys_panic("Unable to initialize the system mockncclComm because the file can not be openned");
     }
-#endif
+    // #endif
     if (inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedy ||
         inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedyFlex)
     {

@@ -1085,58 +1085,133 @@ void DataSlice(uint64_t data_size, uint64_t nDpu)
     uint64_t flowNumPerRank = (data_size + agg_grain - 1) / agg_grain;
 }
 
-FlowModels MockNcclGroup::genAllReduceOneDpuFlowModels(GroupInfo gp_info, uint64_t data_size, uint64_t dpuId)
+FlowModels MockNcclGroup::genAllReduceOneDpuFlowModels(GroupInfo gp_info, uint64_t data_size, int dpuId)
 {
     int nranks = gp_info.nRanks;
     // uint64_t agg_grain = 1 * 1024 * 1024; // 1M per flow
-    uint64_t agg_grain = data_size / nranks; // 每个flow的大小
+    uint64_t agg_grain = data_size / nranks; // 每个flow的大小，为传输的1/64
     uint64_t flowNumPerGpu = (data_size + agg_grain - 1) / agg_grain;
     FlowModels result = {};
 
-    // gpu0                       gpu1                                                        gpui
-    // 0 -- flowNumPerGpu-1 ,    1*flowNumPerGpu+0 -- 1*flowNumPerGpu+flowNumPerGpu-1     i*fnPerGpu -- i*fnPerGpu+fnPerGpu-1
-
-    //        dpu
-    //  chunk0
-    //
+    // ------- 备注：每个GPU的流ID区间示例 -------
+    // gpu0: 0 ~ flowNumPerGpu-1
+    // gpu1: 1*flowNumPerGpu ~ 1*flowNumPerGpu+flowNumPerGpu-1
+    // ...
+    // gpui: i*fnPerGpu ~ i*fnPerGpu+fnPerGpu-1
 
     vector<int> _prev;
     for (int gpuId = 0; gpuId < nranks; gpuId++)
-    {
         _prev.push_back(gpuId);
-    }
     for (int chunk = 0; chunk < flowNumPerGpu; chunk++)
     {
-        vector<int> parentFlowIds;
-        vector<int> childFlowIds;
+        vector<int> parentFlowIds; // 存储所有发送流的ID，作为接收流的前驱
+        vector<int> childFlowIds;  // 存储所有接收流的ID，作为发送流的后继
         for (int flowId = g_flow_id; flowId < g_flow_id + nranks; flowId++)
         {
-            parentFlowIds.push_back(flowId);
-            childFlowIds.push_back(flowId + nranks);
+            parentFlowIds.push_back(flowId);         // parent: 发送流ID
+            childFlowIds.push_back(flowId + nranks); // child: 对应的接收流ID
         }
+        // 1. 构造所有GPU向DPU发送数据的flow
         for (int gpuId = 0; gpuId < nranks; gpuId++)
         {
-            auto send_flow = SingleFlow(g_flow_id, gpuId,
-                                        dpuId,                   // DPU编号
-                                        agg_grain, {(int)dpuId}, // 无前驱
-                                        {},
-                                        childFlowIds, // 下一个flow
+            // send_flow: GPU -> DPU
+            auto send_flow = SingleFlow(g_flow_id,    // flow唯一ID
+                                        gpuId,        // src: GPU编号
+                                        dpuId,        // dst: DPU编号
+                                        agg_grain,    // 数据量
+                                        {dpuId},      // 前驱，这里没用上
+                                        {},           // parent flow
+                                        childFlowIds, // 后继flow（对应本chunk下发的所有recv flow）
                                         /*channel_id*/ 0,
-                                        /*chunk_id*/ chunk, flowNumPerGpu, "DPU");
+                                        /*chunk_id*/ chunk,
+                                        flowNumPerGpu, // chunk总数
+                                        "GPU2DPU"      // 标记类型
+            );
             result[std::make_pair(0, g_flow_id)] = send_flow;
             g_flow_id++;
         }
+        // 2. 构造DPU聚合后广播回所有GPU的flow
         for (int gpuId = 0; gpuId < nranks; gpuId++)
         {
-            auto recv_flow = SingleFlow(g_flow_id, dpuId,
-                                        gpuId, // DPU编号
-                                        agg_grain,
-                                        _prev,             // 无前驱
-                                        parentFlowIds, {}, // 下一个flow是recv
+            // recv_flow: DPU -> GPU
+            auto recv_flow = SingleFlow(g_flow_id,     // flow唯一ID
+                                        dpuId,         // src: DPU编号
+                                        gpuId,         // dst: GPU编号
+                                        agg_grain,     // 数据量
+                                        _prev,         // 前驱（所有GPU编号）
+                                        parentFlowIds, // parent flow（依赖所有发送流完成）
+                                        {},            // child flow
                                         /*channel_id*/ 0,
-                                        /*chunk_id*/ chunk, flowNumPerGpu, "DPU");
+                                        /*chunk_id*/ chunk,
+                                        flowNumPerGpu, // chunk总数
+                                        "DPU2GPU"      // 标记类型
+            );
             result[std::make_pair(0, g_flow_id)] = recv_flow;
             g_flow_id++;
+        }
+    }
+    return result;
+}
+
+FlowModels MockNcclGroup::genAllReduceMultiDpuFlowModels(GroupInfo gp_info, uint64_t data_size, std::vector<int> dpus)
+{
+    int num_gpus = gp_info.nRanks; // GPU数
+    int num_dpus = dpus.size();    // DPU数
+    // uint64_t agg_grain = 1 * 1024 * 1024; // 1M per flow
+    uint64_t agg_grain = data_size / num_gpus;
+    uint64_t num_chunks = (data_size + agg_grain - 1) / agg_grain; // 总分块数
+    FlowModels result = {};
+
+    vector<int> all_gpu_ids;
+    for (int gpuId = 0; gpuId < num_gpus; gpuId++)
+        all_gpu_ids.push_back(gpuId);
+
+    std::vector<int> last_chunk_send_flow_id(num_gpus, -1); // 每个GPU最近一次发送流id
+
+    // 遍历每个chunk，分配到某个DPU
+    for (uint64_t chunk_idx = 0; chunk_idx < num_chunks; ++chunk_idx)
+    {
+        int dpuId = dpus[chunk_idx % num_dpus]; // 轮转分配DPU
+
+        // 预分配flow_id
+        std::vector<int> chunk_send_ids, chunk_recv_ids;
+        for (int i = 0; i < num_gpus; ++i)
+            chunk_send_ids.push_back(g_flow_id++);
+        for (int i = 0; i < num_gpus; ++i)
+            chunk_recv_ids.push_back(g_flow_id++);
+
+        // 1. 所有GPU上传本chunk到该DPU
+        for (int gpu_id = 0; gpu_id < num_gpus; ++gpu_id)
+        {
+            auto send_flow = SingleFlow(chunk_send_ids[gpu_id], // flow_id
+                                        gpu_id,                 // src
+                                        dpuId,                  // dst (负责聚合的DPU)
+                                        agg_grain,              // 数据量
+                                        {dpuId},                // 无前驱
+                                        {},                     // parent
+                                        chunk_recv_ids,         // child: 对应本chunk所有recv_flow
+                                        0,                      // channel_id
+                                        chunk_idx,              // chunk_id
+                                        num_chunks,             // 总chunk数
+                                        "GPU2DPU");
+            result[std::make_pair(0, chunk_send_ids[gpu_id])] = send_flow;
+        }
+
+        // 2. DPU聚合后广播本chunk回所有GPU
+        for (int gpu_id = 0; gpu_id < num_gpus; ++gpu_id)
+        {
+            auto recv_flow = SingleFlow(chunk_recv_ids[gpu_id], // flow_id
+                                        dpuId,                  // src
+                                        gpu_id,                 // dst
+                                        agg_grain,              // 数据量
+                                        all_gpu_ids,            // 前驱：所有GPU
+                                        chunk_send_ids,         // parent: 所有send_flow
+                                        {},                     // child
+                                        0,                      // channel_id
+                                        chunk_idx,              // chunk_id
+                                        num_chunks,             // 总chunk数
+                                        "DPU2GPU");
+            result[std::make_pair(0, chunk_recv_ids[gpu_id])] = recv_flow;
         }
     }
     return result;
@@ -1165,11 +1240,12 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceDpuFlowMod
         gp_info = AllGroups[gp_idx];
     }
     result = genAllReduceOneDpuFlowModels(gp_info, data_size, gp_info.Dpus[0]);
+    // result = genAllReduceMultiDpuFlowModels(gp_info, data_size, gp_info.Dpus);
 
-    // for (auto [k, v] : result)
-    // {
-    //     v.show();
-    // }
+    for (auto [k, v] : result)
+    {
+        v.show();
+    }
     rank2flowmodels.clear();
     for (auto flow_models_it = result.begin(); flow_models_it != result.end(); flow_models_it++)
     {
@@ -1461,28 +1537,28 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceRingFlowMo
         rank2pflowmodels[it->first] = std::make_shared<FlowModels>(it->second);
     }
 
-    // for (const auto &rank_entry : rank2pflowmodels)
-    // {
-    //     int rank = rank_entry.first;
-    //     const std::shared_ptr<FlowModels> &flow_models_ptr = rank_entry.second;
+    for (const auto &rank_entry : rank2pflowmodels)
+    {
+        int rank = rank_entry.first;
+        const std::shared_ptr<FlowModels> &flow_models_ptr = rank_entry.second;
 
-    //     std::cout << "Rank: " << rank << std::endl;
+        std::cout << "Rank: " << rank << std::endl;
 
-    //     if (!flow_models_ptr)
-    //     {
-    //         std::cout << "  (empty or null FlowModels)" << std::endl;
-    //         continue;
-    //     }
+        if (!flow_models_ptr)
+        {
+            std::cout << "  (empty or null FlowModels)" << std::endl;
+            continue;
+        }
 
-    //     for (auto &flow_entry : *flow_models_ptr)
-    //     {
-    //         const std::pair<int, int> &flow_key = flow_entry.first;
-    //         auto &flow = flow_entry.second;
+        for (auto &flow_entry : *flow_models_ptr)
+        {
+            const std::pair<int, int> &flow_key = flow_entry.first;
+            auto &flow = flow_entry.second;
 
-    //         std::cout << "  Flow (" << flow_key.first << ", " << flow_key.second << "):" << std::endl;
-    //         flow.show(); // 调用成员函数打印内容
-    //     }
-    // }
+            std::cout << "  Flow (" << flow_key.first << ", " << flow_key.second << "):" << std::endl;
+            flow.show(); // 调用成员函数打印内容
+        }
+    }
     return rank2pflowmodels;
 }
 

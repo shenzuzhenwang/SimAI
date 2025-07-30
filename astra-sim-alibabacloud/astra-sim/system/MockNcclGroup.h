@@ -172,7 +172,10 @@ private:
     std::map<int, std::shared_ptr<FlowModels>> genAlltoAllFlowModels(GroupType type, int rank, uint64_t data_size);
     std::map<int, std::shared_ptr<FlowModels>> genAllReduceFlowModels(GroupType type, int rank, uint64_t data_size);
     std::map<int, std::shared_ptr<FlowModels>> genAllReduceRingFlowModels(GroupType type, int rank, uint64_t data_size);
-    FlowModels genAllReduceOneDpuFlowModels(GroupInfo gp_info, uint64_t data_size, uint64_t dpuId);
+
+    FlowModels genAllReduceOneDpuFlowModels(GroupInfo gp_info, uint64_t data_size, int dpuId);
+    FlowModels genAllReduceMultiDpuFlowModels(GroupInfo gp_info, uint64_t data_size, std::vector<int> dpus);
+
     std::map<int, std::shared_ptr<FlowModels>> genAllReduceDpuFlowModels(GroupType type, int ranke, uint64_t data_size);
     std::map<int, std::shared_ptr<FlowModels>> genAllreduceNVLSFlowModels(GroupType type, int rank, uint64_t data_size);
     std::shared_ptr<FlowModels> genallReduceNVLSTreeFlowModels(GroupType type, int rank, uint64_t data_size);

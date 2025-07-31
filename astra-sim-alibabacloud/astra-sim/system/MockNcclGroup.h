@@ -93,16 +93,15 @@ public:
     GroupType type;
     int nNodes;
     int nRanks;
-    int dpuPerSw;
     std::vector<int> Ranks;
     std::vector<int> NVSwitchs;
     std::vector<int> Dpus;
     std::vector<int> DpuNVSwitch;
     GroupInfo() {}
     GroupInfo(int _group_index, GroupType _type, int _nNodes, int _nRanks, std::vector<int> _Ranks, std::vector<int> _NVSwitchs,
-              std::vector<int> _Dpus = {}, int _dpu_per_sw = 0, std::vector<int> _DpuNVSwitch = {})
+              std::vector<int> _Dpus = {}, std::vector<int> _DpuNVSwitch = {})
         : group_index(_group_index), type(_type), nNodes(_nNodes), nRanks(_nRanks), Ranks(_Ranks), NVSwitchs(_NVSwitchs), Dpus(_Dpus),
-          dpuPerSw(_dpu_per_sw), DpuNVSwitch(_DpuNVSwitch)
+          DpuNVSwitch(_DpuNVSwitch)
     {
     }
     ~GroupInfo() {}
@@ -205,7 +204,7 @@ public:
     std::map<int, std::vector<int>> gen_local_ring(int rank, GroupType type);
     RingChannels genringchannels(int rank, GroupType type);
     TreeChannels gettreechannels(int rank, GroupType type);
-    // TreeChannels getdpuchannels(int rank, GroupType type);
+    TreeChannels getdpuchannels(int rank, GroupType type);
     TreeChannels get_nvls_channels(int rank, GroupType type);
     NVLStreechannels get_nvls_tree_channels(int rank, GroupType type);
     ncclChannelNode *gen_nvls_tree_intra_channels(std::vector<int> intra_topo, std::map<int, vector<ncclChannelNode *>> &nvlstreechannel);

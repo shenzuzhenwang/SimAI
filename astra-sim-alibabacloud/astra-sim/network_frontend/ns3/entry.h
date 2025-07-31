@@ -123,7 +123,7 @@ void SendFlow(int src, int dst, uint64_t maxPacketCount, void (*msg_handler)(voi
             cs.ExitSection();
 #endif
         }
-        int flow_id = request->flowTag.current_flow_id;
+        // int flow_id = request->flowTag.current_flow_id;
         bool nvls_on = request->flowTag.nvls_on;
         int pg = 3, dport = 100;
         int send_lat = 6000;
@@ -441,6 +441,8 @@ int main1(string network_topo, string network_conf)
     // NS3_MTP is defined
 
     endt = clock();
+    double duration = (double)(endt - begint) / CLOCKS_PER_SEC;
+    std::cout << "Simulation time: " << duration << " seconds\n";
     return 0;
 }
 #endif

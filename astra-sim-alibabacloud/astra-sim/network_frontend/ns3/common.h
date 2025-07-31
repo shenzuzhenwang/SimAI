@@ -397,7 +397,7 @@ void printRoutingEntries()
         for (auto j = table.begin(); j != table.end(); j++)
         {
             Ptr<Node> dst = j->first;
-            Ipv4Address dstAddr = dst->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal();
+            // Ipv4Address dstAddr = dst->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal();
             vector<Ptr<Node>> nexts = j->second;
             for (int k = 0; k < (int)nexts.size(); k++)
             {
@@ -521,6 +521,7 @@ uint64_t get_nic_rate(NodeContainer &n)
     for (uint32_t i = 0; i < n.GetN(); i++)
         if (n.Get(i)->GetNodeType() == 0)
             return DynamicCast<QbbNetDevice>(n.Get(i)->GetDevice(1))->GetDataRate().GetBitRate();
+    return 0;
 }
 
 bool ReadConf(string network_topo, string network_conf)

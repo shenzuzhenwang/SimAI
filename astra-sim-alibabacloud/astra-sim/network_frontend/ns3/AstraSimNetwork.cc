@@ -154,8 +154,8 @@ public:
         AstraSim::EventType event = ehd->event;
         tag = ehd->flowTag.tag_id;
         if (Print_ID < 0 || rank == Print_ID)
-            NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channel id %d", src, rank, tag,
-                              ehd->flowTag.channel_id);
+            NcclLog->writeLog(NcclLogLevel::DEBUG, "[Receive event registration] src %d sim_recv on rank %d tag_id %d channel id %d event type %d",
+                              src, rank, tag, ehd->flowTag.channel_id, event);
 
         if (recvHash.find(make_pair(tag, make_pair(t.src, t.dest))) != recvHash.end())
         {

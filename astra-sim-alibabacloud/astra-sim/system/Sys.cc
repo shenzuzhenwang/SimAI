@@ -312,6 +312,16 @@ Sys::Sys(
         "Unable to initialize the system mockncclComm because the file can not be openned");
   }
   #endif
+  result = mock_nccl_grobal_group_init();
+  if(result == false) {
+    sys_panic(
+        "Unable to initialize the system grobal group because the file can not be openned");
+  }
+  result = mock_nccl_comms_init();
+  if (result == false) {
+    sys_panic(
+        "Unable to initialize the system mockncclComm because the file can not be openned");
+  }
   if (inter_dimension_scheduling == InterDimensionScheduling::OfflineGreedy ||
       inter_dimension_scheduling ==
           InterDimensionScheduling::OfflineGreedyFlex) {

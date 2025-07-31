@@ -317,9 +317,11 @@ def SuperPod(parameters):
     links = dpuNum+(int)(parameters['psw_switch_num']/pod_num * parameters['asw_switch_num'] + servers * parameters['gpu_per_server']
                   + servers * parameters['nv_switch_per_server'] * parameters['gpu_per_server']) # 
     if parameters['topology'] == 'DCN+':
-        file_name = "DCN+SingleToR_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_"+parameters['bandwidth']+"_"+parameters['gpu_type']
+        file_name = "Dpu_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_"+parameters['bandwidth']+"_"+parameters['gpu_type']
     else:
-        file_name = "No_Rail_Opti_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_SingleToR_"+parameters['bandwidth']+"_"+parameters['gpu_type']
+        file_name = "Dpu_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_SingleToR_"+parameters['bandwidth']+"_"+parameters['gpu_type']
+    if dpuPerSw==0:
+        file_name = "Ring_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_SingleToR_"+parameters['bandwidth']+"_"+parameters['gpu_type']
     with open(file_name, 'w') as f:
         print(file_name)
         first_line = str(nodes)+" "+str(parameters['gpu_per_server'])+" "+str(nv_switch_num)+" "+str(switch_nodes-nv_switch_num)+" "+str(int(links))+" "+str(parameters['gpu_type'])+" "+str(dpuNum)
@@ -615,7 +617,7 @@ def analysis_template(args, default_parameters):
                           'nvlink_bw': '2880Gbps','nv_latency': '0.000025ms', 'latency': '0.0005ms',
                           'bandwidth': '400Gbps', 'asw_switch_num': 8,  'nics_per_aswitch': 64,
                           'psw_switch_num': 64, 'ap_bandwidth': "400Gbps", 'asw_per_psw' : 64,
-                          'dpu_per_sw':0,'dpu_bw':'10000Gbps','dpu_latency':'0s'}
+                          'dpu_per_sw':0,'dpu_bw':'51200Gbps','dpu_latency':'0s'}
     parameters = {}
     parameters['topology'] = args.topology
     parameters['rail_optimized'] = bool(args.ro)
@@ -699,7 +701,7 @@ def analysis_template(args, default_parameters):
             default_parameters.update({
                 'nics_per_aswitch': 64,        # 每个平面仍然有完整的连接（两个平面并行）
                 'asw_switch_num': 2,           # 每个平面一个交换机，共两个
-                'bandwidth': '25Gbps',         # 单平面带宽不变，但双平面总带宽翻倍
+                'bandwidth': '400Gbps',         # 单平面带宽不变，但双平面总带宽翻倍
             })
             parameters.update({
                 'rail_optimized': True,       # RAIL 优化可选

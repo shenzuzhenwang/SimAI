@@ -21,7 +21,7 @@ namespace MockNccl {
     this->ringchannels = this->GlobalGroup->genringchannels(rank,type);
     this->treechannels = this->GlobalGroup->gettreechannels(rank,type);
     this->nvlschannels = this->GlobalGroup->get_nvls_channels(rank,type);
-    // this->dpuchannels=this->GlobalGroup->getdpuchannels(rank,type);
+    this->dpuchannels=this->GlobalGroup->getdpuchannels(rank,type);
     // this->nvlstreechannels = this->GlobalGroup->get_nvls_tree_channels(rank,type);
     
   }
@@ -54,19 +54,20 @@ namespace MockNccl {
     return nvlschannel;
   }
   MockNccl::TreeChannels MockNcclComm::get_dpuchannels(){
-    TreeChannels nvlschannel ;
-    vector<int> _down;
-    for(int i=0;i<64;i++){
-      nvlschannel[0][i]=ncclTree(-1,i,129,{});
-      _down.push_back(i);
-    }
-    nvlschannel[0][129]=ncclTree(-1,129,-1,_down);
+    // TreeChannels nvlschannel ;
+    // vector<int> _down;
+    // for(int i=0;i<64;i++){
+    //   nvlschannel[0][i]=ncclTree(-1,i,129,{});
+    //   _down.push_back(i);
+    // }
+    // nvlschannel[0][129]=ncclTree(-1,129,-1,_down);
+    // return nvlschannel;
     // nvlschannel[0][0]=ncclTree(-1,0,9,{});
     // nvlschannel[0][1]=ncclTree(-1,1,9,{});
     // nvlschannel[0][2]=ncclTree(-1,2,9,{});
     // nvlschannel[0][3]=ncclTree(-1,3,9,{});
     // nvlschannel[0][9]=ncclTree(-1,9,-1,{0,1,2,3});
-    return nvlschannel;
+    return this->dpuchannels;
   }
   MockNccl::TreeChannels MockNcclComm::get_nvls_channels(){
     return this->nvlschannels;

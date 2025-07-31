@@ -170,7 +170,8 @@ namespace MockNccl {
     std::map<int,std::shared_ptr<FlowModels>> genAlltoAllFlowModels(GroupType type, int rank, uint64_t data_size);
     std::map<int,std::shared_ptr<FlowModels>> genAllReduceFlowModels(GroupType type , int rank,uint64_t data_size);
     std::map<int,std::shared_ptr<FlowModels>> genAllReduceRingFlowModels(GroupType type , int rank,uint64_t data_size);
-    FlowModels genAllReduceOneDpuFlowModels(GroupInfo gp_info,uint64_t data_size,uint64_t dpuId);
+    FlowModels genAllReduceOneDpuFlowModels(GroupInfo gp_info,uint64_t data_size,uint64_t dpuId,int channelId);
+    FlowModels genAllReduceOneDpuFlowModelsOpt(GroupInfo gp_info,uint64_t data_size,uint64_t dpuId,int channelId);
     std::map<int,std::shared_ptr<FlowModels>> genAllReduceDpuFlowModels(GroupType type ,int ranke,uint64_t data_size);
     std::map<int,std::shared_ptr<FlowModels>> genAllreduceNVLSFlowModels(
         GroupType type,
@@ -196,7 +197,7 @@ namespace MockNccl {
         int rank,
         GroupType type);
     TreeChannels gettreechannels(int rank, GroupType type);
-    // TreeChannels getdpuchannels(int rank, GroupType type);
+    TreeChannels getdpuchannels(int rank, GroupType type);
     TreeChannels get_nvls_channels(int rank,GroupType type);
     NVLStreechannels get_nvls_tree_channels(int rank,GroupType type);
     ncclChannelNode* gen_nvls_tree_intra_channels(std::vector<int>intra_topo,std::map<int, vector<ncclChannelNode*>> &nvlstreechannel);

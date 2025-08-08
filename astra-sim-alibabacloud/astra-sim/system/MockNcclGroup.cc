@@ -1057,9 +1057,9 @@ namespace MockNccl {
 
   FlowModels MockNcclGroup::genAllReduceOneDpuFlowModels(GroupInfo gp_info,uint64_t data_size,uint64_t dpuId,int channelId){
     int nranks=gp_info.nRanks;
-    uint64_t chunkNum=nranks/gp_info.Dpus.size();
-    // uint64_t agg_grain=1*1024*1024;   //1M per flow
-    uint64_t agg_grain=data_size/chunkNum;
+    // uint64_t chunkNum=nranks/gp_info.Dpus.size();
+    uint64_t agg_grain=25*1024*1024;   //1M per flow
+    // uint64_t agg_grain=data_size/chunkNum;
     uint64_t flowNumPerGpu=(data_size+agg_grain-1)/agg_grain;
     FlowModels result = {};
 

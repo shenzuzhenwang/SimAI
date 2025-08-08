@@ -300,7 +300,7 @@ def SuperPod(parameters):
     if(segment_num != parameters['asw_switch_num'] / asw_switch_num_per_segment):
         warnings.warn("Error relations between total GPU Nums and total aws_switch_num.\n \
                          The correct asw_switch_num is set to "+str(segment_num * asw_switch_num_per_segment))
-        parameters['asw_switch_num'] = segment_num * asw_switch_num_per_segment
+        # parameters['asw_switch_num'] = segment_num * asw_switch_num_per_segment
     print("asw_switch_num: " + str(parameters['asw_switch_num']))
     if segment_num > int(parameters['asw_per_psw'] /  asw_switch_num_per_segment):
         raise ValueError("Number of GPU exceeds the capacity of Rail_Optimized_SingleToR(One Pod)")
@@ -314,7 +314,7 @@ def SuperPod(parameters):
     nodes = dpuNum+(int) (parameters['gpu'] + parameters['asw_switch_num'] + parameters['psw_switch_num']+ nv_switch_num ) # 
     servers = parameters['gpu'] / parameters['gpu_per_server']
     switch_nodes = (int)(parameters['psw_switch_num'] + parameters['asw_switch_num'] + nv_switch_num) # 
-    links = dpuNum+(int)(parameters['psw_switch_num']/pod_num * parameters['asw_switch_num'] + servers * parameters['gpu_per_server']
+    links = dpuNum+(int)(parameters['psw_switch_num']/pod_num * parameters['asw_switch_num'] + parameters['asw_switch_num']*servers * parameters['gpu_per_server']
                   + servers * parameters['nv_switch_per_server'] * parameters['gpu_per_server']) # 
     if parameters['topology'] == 'DCN+':
         file_name = "Dpu_"+str(parameters['gpu'])+"g_"+str(parameters['gpu_per_server'])+"gps_"+parameters['bandwidth']+"_"+parameters['gpu_type']
@@ -363,9 +363,13 @@ def SuperPod(parameters):
                 line = str(i)+" "+str(nv_switch[ind_nv+j])+" "+str(parameters['nvlink_bw'])+" "+str(parameters['nv_latency'])+" "+str(parameters['error_rate'])
                 f.write(line)
                 f.write('\n')
-            line = str(i)+" "+str(asw_switch[group_num*asw_switch_num_per_segment+ind_asw])+" "+str(parameters['bandwidth'])+" "+str(parameters['latency'])+" "+str(parameters['error_rate'])
-            f.write(line)
-            f.write('\n')
+            for asw in asw_switch:
+                line = str(i)+" "+str(asw)+" "+str(parameters['bandwidth'])+" "+str(parameters['latency'])+" "+str(parameters['error_rate'])
+                f.write(line)
+                f.write('\n')
+            # line = str(i)+" "+str(asw_switch[group_num*asw_switch_num_per_segment+ind_asw])+" "+str(parameters['bandwidth'])+" "+str(parameters['latency'])+" "+str(parameters['error_rate'])
+            # f.write(line)
+            # f.write('\n')
             group_account = group_account + 1
             
             if group_account == nodes_per_asw:
@@ -683,11 +687,11 @@ def analysis_template(args, default_parameters):
     elif parameters['topology'] == 'SuperPod':
         # SuperPod 拓扑配置
         default_parameters.update({
-            'gpu': 64,  # 每个服务器一个GPU，总共64个GPU
-            'asw_switch_num': 1,  # 4个交换机
+            'gpu': 8,  # 每个服务器一个GPU，总共64个GPU
+            'asw_switch_num': 4,  # 4个交换机
             'gpu_per_server': 1,
             'psw_switch_num': 0,  
-            'nics_per_aswitch': 64,  # 每个交换机有64个网卡连接
+            'nics_per_aswitch': 8,  # 每个交换机有64个网卡连接
             'bandwidth': '25Gbps',  # 假设带宽为400Gbps
             'nv_switch_per_server':1,
             'latency':'0s'

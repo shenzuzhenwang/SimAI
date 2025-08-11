@@ -988,14 +988,13 @@ std::istringstream MergeSwitchIfNeeded(const std::string &topology_file)
         ss << l.src << " " << l.dst << " " << l.bw << " " << l.delay << " " << l.err << "\n";
     }
 
-    std::string ss_str = ss.str(); // 注意：std::ostringstream 只能被 .str() 一次，多次会清空内容
-    // 保存一份到文件
-    std::ofstream debug_out("merged_topo.txt");
-    debug_out << ss_str;
-    debug_out.close();
-    // 再返回 istringstream 给主逻辑
-    return std::istringstream(ss_str);
-    // return std::istringstream(ss.str());
+    // std::string ss_str = ss.str(); // 注意：std::ostringstream 只能被 .str() 一次，多次会清空内容
+    // // 保存一份到文件
+    // std::ofstream debug_out("merged_topo.txt");
+    // debug_out << ss_str;
+    // debug_out.close();
+    // return std::istringstream(ss_str);
+    return std::istringstream(ss.str());
 }
 
 void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_finish)(FILE *, Ptr<RdmaQueuePair>))

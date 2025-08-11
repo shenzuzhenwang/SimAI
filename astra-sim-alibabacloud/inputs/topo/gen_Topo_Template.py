@@ -603,6 +603,7 @@ def main():
     parser.add_argument('-apbw','--ap_bandwidth',type=str,default=None,help='asw to psw bandwidth,default 400Gbps')   
     parser.add_argument('-app','--asw_per_psw',type=int,default=None,help='asw for psw')
     parser.add_argument('-dps','--dpu_per_sw',type=int,default=None,help='dpu per switch,default 0')
+    parser.add_argument('-dpubw','--dpu_bw',type=str,default=None,help='dpu bandwidth,default 400Gbps')
     args = parser.parse_args()
 
     default_parameters = []
@@ -634,7 +635,7 @@ def analysis_template(args, default_parameters):
                           'nvlink_bw': '2880Gbps','nv_latency': '0.000025ms', 'latency': '0.0005ms',
                           'bandwidth': '400Gbps', 'asw_switch_num': 8,  'nics_per_aswitch': 64,
                           'psw_switch_num': 64, 'ap_bandwidth': "400Gbps", 'asw_per_psw' : 64,
-                          'dpu_per_sw':0,'dpu_bw':'1600Gbps','dpu_latency':'0.00000ms'}
+                          'dpu_per_sw':0,'dpu_bw':'400Gbps','dpu_latency':'0.00000ms'}
     parameters = {}
     parameters['topology'] = args.topology
     parameters['rail_optimized'] = bool(args.ro)

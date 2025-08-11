@@ -1,7 +1,7 @@
 #ring allreduce bash
 set -e
 
-TOPO="topology/64g_1gps_SingleToR_400Gbps_H100"
+TOPO="topology/Ring_64g_4sw_1gps_100Gbps_H100"
 WORKLOAD="example/2gallreduce.txt"
 CONF="astra-sim-alibabacloud/inputs/config/RING.conf"
 RUN_LOG="sim_run.log"

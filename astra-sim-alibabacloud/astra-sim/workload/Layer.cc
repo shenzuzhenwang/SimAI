@@ -340,7 +340,7 @@ bool Layer::is_weight_grad_comm_finished_blocking()
 void Layer::print_involved_dimensions(std::vector<bool> &involved_dimensions)
 {
     std::cout << " involved dimensions: ";
-    for (int i = 0; i < involved_dimensions.size(); i++)
+    for (size_t i = 0; i < involved_dimensions.size(); i++)
     {
         if (involved_dimensions[i] == true)
         {
@@ -837,37 +837,37 @@ LayerData Layer::report(std::string run_name, int layer_num, int total_rows, int
 
     return layerData;
 }
-static std::pair<int, int> binarySearch(const std::vector<long> &arr, long target)
-{
-    int low = 0;
-    int high = arr.size() - 1;
-    int leftIndex = -1, rightIndex = -1;
+// static std::pair<int, int> binarySearch(const std::vector<long> &arr, long target)
+// {
+//     int low = 0;
+//     int high = arr.size() - 1;
+//     int leftIndex = -1, rightIndex = -1;
 
-    while (low <= high)
-    {
-        int mid = low + (high - low) / 2;
+//     while (low <= high)
+//     {
+//         int mid = low + (high - low) / 2;
 
-        if (arr[mid] < target)
-        {
-            low = mid + 1;
-            leftIndex = mid;
-        }
-        else if (arr[mid] > target)
-        {
-            high = mid - 1;
-            rightIndex = mid;
-        }
-        else
-        {
-            leftIndex = mid;
-            rightIndex = mid;
-            break;
-        }
-    }
-    return std::make_pair(leftIndex, rightIndex);
-}
+//         if (arr[mid] < target)
+//         {
+//             low = mid + 1;
+//             leftIndex = mid;
+//         }
+//         else if (arr[mid] > target)
+//         {
+//             high = mid - 1;
+//             rightIndex = mid;
+//         }
+//         else
+//         {
+//             leftIndex = mid;
+//             rightIndex = mid;
+//             break;
+//         }
+//     }
+//     return std::make_pair(leftIndex, rightIndex);
+// }
 
-char *comtype_to_coll(ComType comtype)
+const char *comtype_to_coll(ComType comtype)
 {
     switch (comtype)
     {
@@ -892,7 +892,7 @@ char *comtype_to_coll(ComType comtype)
 float Layer::cal_ratio(uint64_t data_size, int nranks, int tp_size, uint32_t gpus_per_server, MockNccl::GroupType group_type, char *coll_type,
                        bool is_nvlink)
 {
-    UserParam *param = UserParam::getInstance();
+    // UserParam *param = UserParam::getInstance();
     auto nic_ratio_data = generator->nic_ratio_data;
     auto nvlink_ratio_data = generator->nvlink_ratio_data;
     auto ata_ratio_data = generator->ata_ratio_data;
@@ -950,15 +950,15 @@ Tick Layer::compute_time(ComType comtype, int tp_size, int nranks, uint64_t data
         return 0;
     }
 
-    int n_ranks;
-    int nnics;
+    // int n_ranks;
+    // int nnics;
     uint32_t gpus_per_server = param->net_work_param.gpus_per_server;
     GPUType gpu_type = param->net_work_param.gpu_type;
     float nvlink_bw = param->net_work_param.nvlink_bw;
     float bw_per_nic = param->net_work_param.bw_per_nic;
     uint32_t nics_per_server = param->net_work_param.nics_per_server;
     char *nic_type = param->net_work_param.nic_type;
-    char *coll_type = comtype_to_coll(comtype);
+    char *coll_type = const_cast<char *>(comtype_to_coll(comtype));
     float bw_ratio = 1.0;
     BusBwResult result;
 
@@ -1235,8 +1235,8 @@ void Layer::issue_forward_pass_comm(SchedulingPolicy pref_scheduling, Collective
 }
 void Layer::issue_input_grad_comm(SchedulingPolicy pref_scheduling, CollectiveBarrier barrier)
 {
-    MockNcclLog *NcclLog = MockNcclLog::getInstance();
 #ifdef ANALYTI
+    MockNcclLog *NcclLog = MockNcclLog::getInstance();
     ig_barrier = barrier;
     if (generator->id == 0)
     {

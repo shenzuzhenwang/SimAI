@@ -107,8 +107,6 @@ FILE *total_flow_output = nullptr;
 unordered_map<uint64_t, uint32_t> rate2kmax, rate2kmin;
 unordered_map<uint64_t, double> rate2pmax;
 
-std::ifstream topof, flowf, tracef;
-
 NodeContainer n;
 
 uint64_t nic_rate;
@@ -874,15 +872,141 @@ void SetConfig()
     }
 }
 
+std::istringstream MergeSwitchIfNeeded(const std::string &topology_file)
+{
+    // 打开原始拓扑文件
+    std::ifstream topof(topology_file.c_str());
+    if (!topof)
+        throw std::runtime_error("Cannot open topology file: " + topology_file);
+
+    // 读取第一行参数
+    uint32_t node_num, gpus_per_server, nvswitch_num, switch_num, link_num;
+    std::string gpu_type_str;
+    uint32_t dpu_num, dpu_nvswitch_num;
+    topof >> node_num >> gpus_per_server >> nvswitch_num >> switch_num >> link_num >> gpu_type_str;
+    topof >> dpu_num >> dpu_nvswitch_num;
+
+    // 读取nvswitch/switch列表
+    std::vector<uint32_t> nvswitch_ids(nvswitch_num);
+    for (uint32_t i = 0; i < nvswitch_num; ++i)
+        topof >> nvswitch_ids[i];
+    std::vector<uint32_t> switch_ids(switch_num);
+    for (uint32_t i = 0; i < switch_num; ++i)
+        topof >> switch_ids[i];
+    std::vector<uint32_t> dpu_ids(dpu_num);
+    for (uint32_t i = 0; i < dpu_num; i++)
+        topof >> dpu_ids[i];
+    std::vector<uint32_t> dpu_nvs_ids(dpu_nvswitch_num);
+    for (uint32_t i = 0; i < dpu_nvswitch_num; i++)
+        topof >> dpu_nvs_ids[i];
+
+    // 读取所有链路
+    struct LinkLine
+    {
+        uint32_t src, dst;
+        std::string bw, delay;
+        double err;
+    };
+    std::vector<LinkLine> links;
+    for (uint32_t i = 0; i < link_num; ++i)
+    {
+        LinkLine l;
+        topof >> l.src >> l.dst >> l.bw >> l.delay >> l.err;
+        links.push_back(l);
+    }
+    topof.close();
+
+    // 判断是否需要合并
+    if (dpu_num == 0 && switch_num > 1)
+    {
+        uint32_t merged_switch = switch_ids[0];
+        std::set<uint32_t> switch_set(switch_ids.begin(), switch_ids.end());
+        std::map<std::pair<uint32_t, uint32_t>, std::tuple<uint64_t, std::string, double>> merge_links;
+        std::vector<LinkLine> rest_links;
+        // 合并所有与switch相关的链路
+        for (auto &l : links)
+        {
+            // src->switch
+            if (switch_set.count(l.dst))
+            {
+                auto key = std::make_pair(l.src, merged_switch);
+                uint64_t bw_val = std::stoull(l.bw.substr(0, l.bw.find("Gbps")));
+                auto &val = merge_links[key];
+                std::get<0>(val) += bw_val;
+                std::get<1>(val) = l.delay;
+                std::get<2>(val) = l.err;
+            }
+            // switch->dst
+            else if (switch_set.count(l.src))
+            {
+                auto key = std::make_pair(merged_switch, l.dst);
+                uint64_t bw_val = std::stoull(l.bw.substr(0, l.bw.find("Gbps")));
+                auto &val = merge_links[key];
+                std::get<0>(val) += bw_val;
+                std::get<1>(val) = l.delay;
+                std::get<2>(val) = l.err;
+            }
+            // 非switch相关链路保留
+            else
+            {
+                rest_links.push_back(l);
+            }
+        }
+        // 合并后的新链路
+        for (auto &kv : merge_links)
+        {
+            LinkLine l;
+            l.src = kv.first.first;
+            l.dst = kv.first.second;
+            l.bw = std::to_string(std::get<0>(kv.second)) + "Gbps";
+            l.delay = std::get<1>(kv.second);
+            l.err = std::get<2>(kv.second);
+            rest_links.push_back(l);
+        }
+        // 更新参数
+        node_num = node_num - switch_num + 1; // 减去原有的switch数量，增加一个合并后的switch
+        switch_num = 1;
+        link_num = rest_links.size();
+        switch_ids = {merged_switch};
+        links = std::move(rest_links);
+    }
+    // 输出到字符串流
+    std::ostringstream ss;
+    ss << node_num << " " << gpus_per_server << " " << nvswitch_num << " " << switch_num << " " << link_num << " " << gpu_type_str << " " << dpu_num
+       << " " << dpu_nvswitch_num << "\n";
+    for (auto id : nvswitch_ids)
+        ss << id << " ";
+    for (auto id : switch_ids)
+        ss << id << " ";
+    for (auto id : dpu_ids)
+        ss << id << " ";
+    for (auto id : dpu_nvs_ids)
+        ss << id << " ";
+    ss << "\n";
+    for (auto &l : links)
+    {
+        ss << l.src << " " << l.dst << " " << l.bw << " " << l.delay << " " << l.err << "\n";
+    }
+
+    std::string ss_str = ss.str(); // 注意：std::ostringstream 只能被 .str() 一次，多次会清空内容
+    // 保存一份到文件
+    std::ofstream debug_out("merged_topo.txt");
+    debug_out << ss_str;
+    debug_out.close();
+    // 再返回 istringstream 给主逻辑
+    return std::istringstream(ss_str);
+    // return std::istringstream(ss.str());
+}
+
 void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_finish)(FILE *, Ptr<RdmaQueuePair>))
 {
-
-    topof.open(topology_file.c_str());
-    flowf.open(flow_file.c_str());
-    tracef.open(trace_file.c_str());
+    std::istringstream topof = MergeSwitchIfNeeded(topology_file);
+    // std::ifstream topof(topology_file.c_str());
+    std::ifstream flowf(flow_file.c_str());
+    std::ifstream tracef(trace_file.c_str());
     string gpu_type_str;
 
-    // nodeNum=node+nvswitch+switch+dpu
+    // nodeNum = node + nvswitch + switch + dpu + dpu_nvswitch
     topof >> node_num >> gpus_per_server >> nvswitch_num >> switch_num >> link_num >> gpu_type_str;
     flowf >> flow_num;
     tracef >> trace_num;
@@ -934,6 +1058,7 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_fin
         topof >> sid;
         node_type[sid] = 2;
     }
+
     for (uint32_t i = 0; i < node_num; i++)
     {
         if (node_type[i] == 0)
@@ -1234,7 +1359,7 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_fin
     }
     flow_input.idx = -1;
 
-    topof.close();
+    // topof.close();
     tracef.close();
 
     if (link_down_time > 0)

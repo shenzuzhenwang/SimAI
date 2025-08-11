@@ -1083,7 +1083,7 @@ FlowModels MockNcclGroup::genAllReduceMultiDpuFlowModels(GroupInfo gp_info, uint
 {
     int num_gpus = gp_info.nRanks;                                 // GPU数
     int num_dpus = dpus.size();                                    // DPU数
-    uint64_t agg_grain = data_size / num_gpus / 4;                 // num_gpus * 2 flow
+    uint64_t agg_grain = data_size / num_gpus / 2;                 // num_gpus * 2 flow 再测 num_gpus * 4 flow 0.706
     uint64_t num_chunks = (data_size + agg_grain - 1) / agg_grain; // 总共要处理多少个 chunk（向上取整）
     FlowModels result = {};
 
@@ -1169,10 +1169,6 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceDpuFlowMod
     GroupInfo gp_info = AllGroups[gp_idx];
     FlowModels result = genAllReduceMultiDpuFlowModels(gp_info, data_size, gp_info.Dpus);
 
-    // for (auto [k, v] : result)
-    // {
-    //     v.show();
-    // }
     rank2flowmodels.clear();
     for (auto flow_models_it = result.begin(); flow_models_it != result.end(); flow_models_it++)
     {

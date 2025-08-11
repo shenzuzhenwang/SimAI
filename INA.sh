@@ -2,7 +2,7 @@
 set -e
 
 TOPO="topology/64g_1gps_SingleToR_400Gbps_H100_64dps"
-WORKLOAD="example/28gallreduce.txt"   # 你可按需指定PS专用 workload
+WORKLOAD="example/2gallreduce.txt"   # 你可按需指定PS专用 workload
 CONF="astra-sim-alibabacloud/inputs/config/DPU.conf"
 RUN_LOG="sim_ps_run.log"
 ENDTOEND="ncclFlowModel_EndToEnd.csv"

@@ -2,7 +2,7 @@
 set -e
 
 TOPO="topology/64g_1gps_SingleToR_400Gbps_H100"
-WORKLOAD="example/28gallreduce.txt"
+WORKLOAD="example/2gallreduce.txt"
 CONF="astra-sim-alibabacloud/inputs/config/RING.conf"
 RUN_LOG="sim_run.log"
 ENDTOEND="ncclFlowModel_EndToEnd.csv"
@@ -10,7 +10,7 @@ THREADS=$(nproc)    # 自动获取逻辑核心数
 
 export AS_SEND_LAT=0
 export AS_NVLS_ENABLE=0
-export AS_LOG_LEVEL=0
+export AS_LOG_LEVEL=1
 
 echo "[$(date)] Running all-reduce with Ring All-Reduce..." | tee "$RUN_LOG"
 

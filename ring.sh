@@ -42,15 +42,24 @@ if [ ! -s "$ENDTOEND" ]; then
   exit 1
 fi
 
+# summary=$(
+# awk -F, '
+# /^total exposed comm/ {
+#     val = $2 / 1000000;
+#     ref = 1.1267;
+#     if (val > ref - 0.1 && val < ref + 0.1)
+#         printf "Time elapsed: %.4f seconds.", ref;
+#     else
+#         printf "Time elapsed: %.4f seconds.", val;
+# }' "$ENDTOEND"
+# )
+# echo "[$(date)] $summary" | tee -a "$RUN_LOG"
+
 summary=$(
 awk -F, '
 /^total exposed comm/ {
     val = $2 / 1000000;
-    ref = 1.1267;
-    if (val > ref - 0.1 && val < ref + 0.1)
-        printf "Time elapsed: %.4f seconds.", ref;
-    else
-        printf "Time elapsed: %.4f seconds.", val;
+    printf "Time elapsed: %.4f seconds. \n", val;
 }' "$ENDTOEND"
 )
 echo "[$(date)] $summary" | tee -a "$RUN_LOG"

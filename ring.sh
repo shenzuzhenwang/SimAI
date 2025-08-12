@@ -2,7 +2,7 @@
 set -e
 
 TOPO="topology/Ring_64g_4sw_1gps_100Gbps_H100"
-WORKLOAD="example/2gallreduce.txt"
+WORKLOAD="example/28gallreduce.txt"
 CONF="astra-sim-alibabacloud/inputs/config/RING.conf"
 RUN_LOG="sim_run.log"
 ENDTOEND="ncclFlowModel_EndToEnd.csv"

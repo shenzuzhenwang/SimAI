@@ -71,7 +71,7 @@ Workload::Workload(std::string run_name, Sys *generator, std::string name, int T
 #ifndef PHY_MTP
     if (generator->id == 0 && seprate_log)
     {
-        std::cout << "stat path: " << path << " ,total rows: " << total_rows << " ,stat row: " << stat_row << std::endl;
+        // std::cout << "stat path: " << path << " ,total rows: " << total_rows << " ,stat row: " << stat_row << std::endl;
         detailed = new CSVWriter(path, "detailed_" + std::to_string(generator->total_nodes) + ".csv");
         end_to_end = new CSVWriter(path, "EndToEnd.csv");
         dimension_utilization = new CSVWriter(path, run_name + "_dimension_utilization_" + std::to_string(generator->npu_offset) + ".csv");
@@ -166,7 +166,7 @@ void Workload::report()
     AstraSimDataAPI astraSimDataAPI;
     astraSimDataAPI.run_name = run_name;
     astraSimDataAPI.workload_finished_time = ((double)Sys::boostedTick()) / FREQ;
-    std::cout << "workload stats for the job scheduled at NPU offset: " << generator->npu_offset << std::endl;
+    // std::cout << "workload stats for the job scheduled at NPU offset: " << generator->npu_offset << std::endl;
     for (int i = 0; i < SIZE; i++)
     {
 #ifdef ANALYTI
@@ -186,8 +186,8 @@ void Workload::report()
     {
         latency /= FREQ;
     }
-    std::cout << "*************************" << std::endl;
-    std::cout << "all passes finished at time: " << Sys::boostedTick() << ", id of first layer: " << layers[0]->id << std::endl;
+    // std::cout << "*************************" << std::endl;
+    // std::cout << "all passes finished at time: " << Sys::boostedTick() << ", id of first layer: " << layers[0]->id << std::endl;
     generator->NI->pass_front_end_report(astraSimDataAPI);
 #ifdef NS3_MTP
     if (this->seprate_log)
@@ -228,9 +228,7 @@ void Workload::check_for_sim_end()
         {
 #ifndef PHY_MTP
             if (generator->id == 0)
-            {
                 report();
-            }
 #endif
             generator->workload_finished();
             return;
@@ -1000,10 +998,8 @@ void Workload::iterate_hybrid_parallel_Transformer_fwd_in_bckwd()
         if (index == -1)
         {
             index = 0;
-            if (generator->id == 0)
-            {
-                std::cout << "pass: " << pass_counter << " finished at time: " << Sys::boostedTick() << std::endl;
-            }
+            // if (generator->id == 0)
+            //     std::cout << "pass: " << pass_counter << " finished at time: " << Sys::boostedTick() << std::endl;
             pass_counter++;
             current_state = LoopState::Forward_Pass;
         }
@@ -1359,10 +1355,8 @@ bool Workload::initialize_workload(std::string name)
     }
     else
     {
-        if (generator->id == 0)
-        {
-            std::cout << "Success in opening workload file" << std::endl;
-        }
+        // if (generator->id == 0)
+        //     std::cout << "Success in opening workload file" << std::endl;
     }
     std::string firstline;
     std::getline(inFile, firstline);
@@ -1390,10 +1384,10 @@ bool Workload::initialize_workload(std::string name)
             if (tokens[i] == "model_parallel_NPU_group:")
             {
                 model_parallel_npu_group = std::stoi(tokens[i + 1]);
-                if (generator->id == 0)
-                {
-                    std::cout << "model_parallel_NPU_group is " << model_parallel_npu_group << std::endl;
-                }
+                // if (generator->id == 0)
+                // {
+                //     std::cout << "model_parallel_NPU_group is " << model_parallel_npu_group << std::endl;
+                // }
             }
             else if (tokens[i] == "ep:")
             {
@@ -1419,10 +1413,8 @@ bool Workload::initialize_workload(std::string name)
 
         if (parallelismPolicy == ParallelismPolicy::TransformerFwdInBckwd)
         {
-            if (generator->id == 0)
-            {
-                std::cout << "checkpoints layers are: ";
-            }
+            // if (generator->id == 0)
+            //     std::cout << "checkpoints layers are: ";
             for (size_t i = 1; i < tokens.size(); i = i + 1)
             {
                 if (tokens[i] == "checkpoints:")
@@ -1433,20 +1425,18 @@ bool Workload::initialize_workload(std::string name)
                         int j = 2;
                         int layer = std::stoi(tokens[i + j]);
                         chekpoints[layer] = true;
-                        if (generator->id == 0)
-                        {
-                            std::cout << layer << ", ";
-                        }
+                        // if (generator->id == 0)
+                        // std::cout << layer << ", ";
                         j++;
                     }
                 }
                 else if (tokens[i] == "checkpoint_initiates:")
                 {
-                    if (generator->id == 0)
-                    {
-                        std::cout << std::endl;
-                        std::cout << "layers initiating fwd_in_bckwd are: ";
-                    }
+                    // if (generator->id == 0)
+                    // {
+                    //     std::cout << std::endl;
+                    //     std::cout << "layers initiating fwd_in_bckwd are: ";
+                    // }
                     int account = std::stoi(tokens[i + 1]);
                     while (account-- > 0)
                     {
@@ -1455,14 +1445,12 @@ bool Workload::initialize_workload(std::string name)
                         need_checkpoint_initiation[layer] = true;
                         if (generator->id == 0)
                         {
-                            std::cout << layer << ", ";
+                            // std::cout << layer << ", ";
                         }
                         j++;
                     }
-                    if (generator->id == 0)
-                    {
-                        std::cout << std::endl;
-                    }
+                    // if (generator->id == 0)
+                    //     std::cout << std::endl;
                 }
             }
         }
@@ -1503,18 +1491,17 @@ bool Workload::initialize_workload(std::string name)
         }
     }
     if (generator->id == 0)
-    {
-        std::cout << "pp_commize:" << pp_commsize << std::endl;
-    }
-    if (generator->id == 0)
-    {
-        if (model_parallel_npu_group == 0 || expert_parallel_npu_group == 0 || pipeline_model_parallelism == 0 || vpp == 0 || GA == 0 ||
-            all_gpus == 0 || (pipeline_model_parallelism != 1 && pp_commsize == 0) || (pipeline_model_parallelism == 1 && pp_commsize != 0))
+        // std::cout << "pp_commize:" << pp_commsize << std::endl;
+        if (generator->id == 0)
         {
-            std::cerr << "*****Warining: Input workload format mismatch. It may cause simulation error. Pleased use the latest AICB to generate.*****"
-                      << std::endl;
+            if (model_parallel_npu_group == 0 || expert_parallel_npu_group == 0 || pipeline_model_parallelism == 0 || vpp == 0 || GA == 0 ||
+                all_gpus == 0 || (pipeline_model_parallelism != 1 && pp_commsize == 0) || (pipeline_model_parallelism == 1 && pp_commsize != 0))
+            {
+                std::cerr
+                    << "*****Warining: Input workload format mismatch. It may cause simulation error. Pleased use the latest AICB to generate.*****"
+                    << std::endl;
+            }
         }
-    }
     run_type = tokens[0];
     std::string secondline;
     std::getline(inFile, secondline);
@@ -1868,14 +1855,12 @@ bool Workload::initialize_workload(std::string name)
                 fp_group_type = MockNccl::GroupType::NONE;
             }
         }
-        if (generator->id == 0)
-        {
-            std::cout << "Workload::initialize_workload: layer id: " << id << ", depen: " << depen << ", fp_compute_time: " << fp_compute_time
-                      << ", fp_comm_type_s: " << fp_comm_type_s << ", fp_comm_size: " << fp_comm_size << ", ig_compute_time: " << ig_compute_time
-                      << ", ig_comm_type_s: " << ig_comm_type_s << ", ig_comm_size: " << ig_comm_size << ", wg_compute_time: " << wg_compute_time
-                      << ", wg_comm_type_s: " << wg_comm_type_s << ", wg_comm_size: " << wg_comm_size << ", wg_update_time: " << wg_update_time
-                      << std::endl;
-        }
+        // if (generator->id == 0)
+        //     std::cout << "Workload::initialize_workload: layer id: " << id << ", depen: " << depen << ", fp_compute_time: " << fp_compute_time
+        //               << ", fp_comm_type_s: " << fp_comm_type_s << ", fp_comm_size: " << fp_comm_size << ", ig_compute_time: " << ig_compute_time
+        //               << ", ig_comm_type_s: " << ig_comm_type_s << ", ig_comm_size: " << ig_comm_size << ", wg_compute_time: " << wg_compute_time
+        //               << ", wg_comm_type_s: " << wg_comm_type_s << ", wg_comm_size: " << wg_comm_size << ", wg_update_time: " << wg_update_time
+        //               << std::endl;
         if (parallelismPolicy == ParallelismPolicy::HybridCustomized)
         {
             std::string specific_parallelsim;
@@ -1910,11 +1895,10 @@ bool Workload::initialize_workload(std::string name)
         }
         layers[i] = l;
     }
-    if (generator->id == 0)
-    {
-        std::cout << "type: " << run_type << " ,num passes: " << TOTAL_PASS << " ,lines: " << lines << " compute scale: " << generator->compute_scale
-                  << " ,comm scale: " << generator->comm_scale << std::endl;
-    }
+    // if (generator->id == 0)
+    //     std::cout << "type: " << run_type << " ,num passes: " << TOTAL_PASS << " ,lines: " << lines << " compute scale: " <<
+    //     generator->compute_scale
+    //               << " ,comm scale: " << generator->comm_scale << std::endl;
     inFile.close();
     return true;
 }

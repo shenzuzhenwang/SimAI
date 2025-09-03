@@ -1169,6 +1169,11 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceDpuFlowMod
     GroupInfo gp_info = AllGroups[gp_idx];
     FlowModels result = genAllReduceMultiDpuFlowModels(gp_info, data_size, gp_info.Dpus);
 
+    for (auto [k, v] : result)
+    {
+        v.show();
+    }
+
     rank2flowmodels.clear();
     for (auto flow_models_it = result.begin(); flow_models_it != result.end(); flow_models_it++)
     {
@@ -1200,8 +1205,7 @@ std::map<int, std::shared_ptr<FlowModels>> MockNcclGroup::genAllReduceRingFlowMo
     int gp_idx;
     RingChannels ringchannels;
     MockNcclLog *NcclLog = MockNcclLog::getInstance();
-    // cout<<"------------------ genAllReduceRingFlowModels(rank:,data_size:)"
-    printf("------------------ genAllReduceRingFlowModels(rank:%d,data_size:%ld)\n", rank, data_size);
+    // printf("------------------ genAllReduceRingFlowModels(rank:%d,data_size:%ld)\n", rank, data_size);
     if (GroupIndex.count(std::make_pair(rank, type)) == 0)
     {
         NcclLog->writeLog(NcclLogLevel::ERROR,

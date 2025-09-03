@@ -41,7 +41,7 @@ void CSVWriter::write_res(std::string data)
 }
 void CSVWriter::initialize_csv(int rows, int cols)
 {
-    std::cout << "CSV path and filename: " << path + name << std::endl;
+    // std::cout << "CSV path and filename: " << path + name << std::endl;
     int trial = 10000;
     do
     {

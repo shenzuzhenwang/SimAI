@@ -47,21 +47,21 @@ Sys::~Sys()
 {
     end_sim_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::minutes>(end_sim_time - start_sim_time);
-    if (id == 0)
-    {
-        auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        std::cout << "*****" << std::endl
-                  << "Time to exit: " << ctime(&timenow) << "all-reduce Collective implementation: " << inp_all_reduce_implementation << std::endl
-                  << "reduce-scatter Collective implementation: " << inp_reduce_scatter_implementation << std::endl
-                  << "all-gather Collective implementation: " << inp_all_gather_implementation << std::endl
-                  << "all-to-all Collective implementation: " << inp_all_to_all_implementation << std::endl
-                  << "Collective optimization: " << inp_collective_optimization << std::endl
-                  << "Total sim duration: " << duration.count() / 60 << ":" << duration.count() % 60 << " hours" << std::endl
-                  << "Total streams injected: " << streams_injected << std::endl
-                  << "Total streams finished: " << streams_finished << std::endl
-                  << "Percentage of finished streams: " << (((double)streams_finished) / streams_injected) * 100 << " %" << std::endl
-                  << "*****" << std::endl;
-    }
+    // if (id == 0)
+    // {
+    //     auto timenow = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    //     std::cout << "*****" << std::endl
+    //               << "Time to exit: " << ctime(&timenow) << "all-reduce Collective implementation: " << inp_all_reduce_implementation << std::endl
+    //               << "reduce-scatter Collective implementation: " << inp_reduce_scatter_implementation << std::endl
+    //               << "all-gather Collective implementation: " << inp_all_gather_implementation << std::endl
+    //               << "all-to-all Collective implementation: " << inp_all_to_all_implementation << std::endl
+    //               << "Collective optimization: " << inp_collective_optimization << std::endl
+    //               << "Total sim duration: " << duration.count() / 60 << ":" << duration.count() % 60 << " hours" << std::endl
+    //               << "Total streams injected: " << streams_injected << std::endl
+    //               << "Total streams finished: " << streams_finished << std::endl
+    //               << "Percentage of finished streams: " << (((double)streams_finished) / streams_injected) * 100 << " %" << std::endl
+    //               << "*****" << std::endl;
+    // }
 #ifndef PHY_MTP
     all_generators[id + npu_offset] = nullptr;
     for (auto lt : logical_topologies)
@@ -252,10 +252,9 @@ Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int n
     // 计算当前维度允许的最大并发流数，创建调度单元与队列层次管理对象。
     concurrent_streams = (int)std::ceil(((double)active_chunks_per_dimension) / queues_per_dim[0]);
     active_first_phase = 100000000;
-    if (id == 0)
-    {
-        std::cout << "The final active chunks per dimension 1 after allocating to queues is: " << concurrent_streams * queues_per_dim[0] << std::endl;
-    }
+    // if (id == 0)
+    //     std::cout << "The final active chunks per dimension 1 after allocating to queues is: " << concurrent_streams * queues_per_dim[0] <<
+    //     std::endl;
     max_running = 100000000;
     // 整个节点/系统的流调度器，负责管理流的分配、切换、优先级、依赖、并发等。这里实际就是：单队列（{1}），单流，最大限制都是无穷大，即只要有流就允许它被调度，不会阻塞
     scheduler_unit = new SchedulerUnit(this, queues_per_dim, max_running, active_first_phase, concurrent_streams);
@@ -271,7 +270,7 @@ Sys::Sys(AstraNetworkAPI *NI, AstraMemoryAPI *MEM, int id, int npu_offset, int n
     if (id == 0)
     {
         std::atexit(exiting);
-        std::cout << "total nodes: " << total_nodes << std::endl;
+        // std::cout << "total nodes: " << total_nodes << std::endl;
     }
 #ifdef ANALYTI
     nic_ratio_data = readCSV(NIC_RATIO_PATH);
@@ -1476,9 +1475,9 @@ DataSet *Sys::generate_collective(uint64_t size, int layer_num, LogicalTopology 
     uint64_t chunk_size = determine_chunk_size(size, collective_type);
     uint64_t recommended_chunk_size = chunk_size;
     int streams = ceil(((double)size) / chunk_size); // 需要的通信流数量，一般为1
-    if (id == 0)
-        std::cout << "chunk size: " << chunk_size << " size: " << size << " layer_num: " << layer_num << " node: " << id << " streams: " << streams
-                  << std::endl;
+    // if (id == 0)
+    //     std::cout << "chunk size: " << chunk_size << " size: " << size << " layer_num: " << layer_num << " node: " << id << " streams: " << streams
+    //               << std::endl;
 
     int64_t tmp;
     DataSet *dataset = new DataSet(streams); // 创建 DataSet（可能包含多个stream）
@@ -1780,7 +1779,7 @@ void Sys::exitSimLoop(std::string msg)
     {
         std::cout << msg << std::endl;
     }
-    NI->sim_finish();
+    // NI->sim_finish();
     return;
 }
 Tick Sys::boostedTick()

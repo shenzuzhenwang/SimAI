@@ -101,10 +101,8 @@ void Layer::call(EventType event, CallData *mdata)
     if (event == EventType::Wight_Grad_Comm_Finished_After_Delay)
     {
 #ifndef PHY_MTP
-        if (generator->id == 0)
-        {
-            std::cout << "***** info: weight gradient collective for layer: " << id << " is finished************" << std::endl;
-        }
+        // if (generator->id == 0)
+        //     std::cout << "***** info: weight gradient collective for layer: " << id << " is finished************" << std::endl;
         weight_grad_datasets[data]->finish_tick += weight_grad_update_time; // 模拟时间加上“权重更新”的延迟时间
         // 统计整个 WG 的总耗时：从创建到结束。
         total_weight_grad_comm += weight_grad_datasets[data]->finish_tick - weight_grad_datasets[data]->creation_tick;
@@ -432,12 +430,12 @@ LayerData Layer::report(std::string run_name, int layer_num, int total_rows, int
     {
         std::string data;
         std::pair<float, float> total_bw;
-        std::cout << "*******************" << std::endl;
-        std::cout << "Layer id: " << id << std::endl;
-        std::cout << "Total collectives issued for this layer: " << collective_counter << std::endl;
-        std::cout << "*************************  Workload stats  "
-                     "************************* "
-                  << id << std::endl;
+        // std::cout << "*******************" << std::endl;
+        // std::cout << "Layer id: " << id << std::endl;
+        // std::cout << "Total collectives issued for this layer: " << collective_counter << std::endl;
+        // std::cout << "*************************  Workload stats  "
+        //              "************************* "
+        //           << id << std::endl;
         if (stat_row == 0 && layer_num == 0)
         {
             data = "layer_name," + run_name +
@@ -452,39 +450,39 @@ LayerData Layer::report(std::string run_name, int layer_num, int total_rows, int
         }
         data = data + "," + run_name;
 
-        std::cout << "id: " << id << " ,Total cycles spent on fwd pass compute: " << total_forward_pass_compute << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on fwd pass compute: " << total_forward_pass_compute << std::endl;
         data = data + "," + std::to_string(total_forward_pass_compute / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent on weight grad compute: " << total_weight_grad_compute << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on weight grad compute: " << total_weight_grad_compute << std::endl;
         data = data + "," + to_string(total_weight_grad_compute / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent on input grad compute: " << total_input_grad_compute << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on input grad compute: " << total_input_grad_compute << std::endl;
         data = data + "," + to_string(total_input_grad_compute / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent idle waiting for fwd finish: " << total_waiting_for_fwd_comm << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent idle waiting for fwd finish: " << total_waiting_for_fwd_comm << std::endl;
         data = data + "," + to_string(total_waiting_for_fwd_comm / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent idle waiting for weight grad finish: " << total_waiting_for_wg_comm << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent idle waiting for weight grad finish: " << total_waiting_for_wg_comm << std::endl;
         data = data + "," + to_string(total_waiting_for_wg_comm / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent idle waiting for input grad finish: " << total_waiting_for_ig_comm << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent idle waiting for input grad finish: " << total_waiting_for_ig_comm << std::endl;
         data = data + "," + to_string(total_waiting_for_ig_comm / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent on fwd pass comm: " << total_fwd_comm << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on fwd pass comm: " << total_fwd_comm << std::endl;
 
         total_bw = compute_busbw(fwd_pass_comm_type, fwd_pass_group_size, fwd_pass_comm_size, total_fwd_comm);
         data = data + "," + to_string(total_fwd_comm / FREQ);
         data = data + "," + to_string(total_bw.first);
         data = data + "," + to_string(total_bw.second);
 
-        std::cout << "id: " << id << " ,Total cycles spent on weight grad comm: " << total_weight_grad_comm << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on weight grad comm: " << total_weight_grad_comm << std::endl;
 
         total_bw = compute_busbw(weight_grad_comm_type, weight_grad_group_size, weight_grad_comm_size, total_weight_grad_comm);
         data = data + "," + to_string(total_weight_grad_comm / FREQ);
         data = data + "," + to_string(total_bw.first);
         data = data + "," + to_string(total_bw.second);
 
-        std::cout << "id: " << id << " ,Total cycles spent on input grad comm: " << total_input_grad_comm << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on input grad comm: " << total_input_grad_comm << std::endl;
 
         total_bw = compute_busbw(input_grad_comm_type, input_grad_group_size, input_grad_comm_size, total_input_grad_comm);
         data = data + "," + to_string(total_input_grad_comm / FREQ);
@@ -654,10 +652,10 @@ LayerData Layer::report(std::string run_name, int layer_num, int total_rows, int
     {
         std::string data;
         std::pair<float, float> total_bw;
-        std::cout << "*******************" << std::endl;
-        std::cout << "Layer id: " << id << std::endl;
-        std::cout << "Total collectives issued for this layer: " << collective_counter << std::endl;
-        std::cout << "*************************  Workload stats  ************************* " << id << std::endl;
+        // std::cout << "*******************" << std::endl;
+        // std::cout << "Layer id: " << id << std::endl;
+        // std::cout << "Total collectives issued for this layer: " << collective_counter << std::endl;
+        // std::cout << "*************************  Workload stats  ************************* " << id << std::endl;
 
         if (stat_row == 0 && layer_num == 0)
         {
@@ -693,40 +691,41 @@ LayerData Layer::report(std::string run_name, int layer_num, int total_rows, int
             return stream.str();
         };
 
-        std::cout << "id: " << id << " ,Total cycles spent on fwd pass compute: " << format_value(total_forward_pass_compute / FREQ) << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on fwd pass compute: " << format_value(total_forward_pass_compute / FREQ) << std::endl;
         data = data + "," + format_value(total_forward_pass_compute / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent on weight grad compute: " << format_value(total_weight_grad_compute / FREQ) << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on weight grad compute: " << format_value(total_weight_grad_compute / FREQ) <<
+        // std::endl;
         data = data + "," + format_value(total_weight_grad_compute / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent on input grad compute: " << format_value(total_input_grad_compute / FREQ) << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on input grad compute: " << format_value(total_input_grad_compute / FREQ) << std::endl;
         data = data + "," + format_value(total_input_grad_compute / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent idle waiting for fwd finish: " << format_value(total_waiting_for_fwd_comm / FREQ)
-                  << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent idle waiting for fwd finish: " << format_value(total_waiting_for_fwd_comm / FREQ) <<
+        // std::endl;
         data = data + "," + format_value(total_waiting_for_fwd_comm / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent idle waiting for weight grad finish: " << format_value(total_waiting_for_wg_comm / FREQ)
-                  << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent idle waiting for weight grad finish: " << format_value(total_waiting_for_wg_comm / FREQ)
+        // << std::endl;
         data = data + "," + format_value(total_waiting_for_wg_comm / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent idle waiting for input grad finish: " << format_value(total_waiting_for_ig_comm / FREQ)
-                  << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent idle waiting for input grad finish: " << format_value(total_waiting_for_ig_comm / FREQ)
+        // << std::endl;
         data = data + "," + format_value(total_waiting_for_ig_comm / FREQ);
 
-        std::cout << "id: " << id << " ,Total cycles spent on fwd pass comm: " << format_value(total_fwd_comm / FREQ) << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on fwd pass comm: " << format_value(total_fwd_comm / FREQ) << std::endl;
         total_bw = compute_busbw(fwd_pass_comm_type, fwd_pass_group_size, fwd_pass_comm_size, total_fwd_comm);
         data = data + "," + format_value(total_fwd_comm / FREQ);
         data = data + "," + format_value_bs(total_bw.first);
         data = data + "," + format_value_bs(total_bw.second);
 
-        std::cout << "id: " << id << " ,Total cycles spent on weight grad comm: " << format_value(total_weight_grad_comm / FREQ) << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on weight grad comm: " << format_value(total_weight_grad_comm / FREQ) << std::endl;
         total_bw = compute_busbw(weight_grad_comm_type, weight_grad_group_size, weight_grad_comm_size, total_weight_grad_comm);
         data = data + "," + format_value(total_weight_grad_comm / FREQ);
         data = data + "," + format_value_bs(total_bw.first);
         data = data + "," + format_value_bs(total_bw.second);
 
-        std::cout << "id: " << id << " ,Total cycles spent on input grad comm: " << format_value(total_input_grad_comm / FREQ) << std::endl;
+        // std::cout << "id: " << id << " ,Total cycles spent on input grad comm: " << format_value(total_input_grad_comm / FREQ) << std::endl;
         total_bw = compute_busbw(input_grad_comm_type, input_grad_group_size, input_grad_comm_size, total_input_grad_comm);
         data = data + "," + format_value(total_input_grad_comm / FREQ);
         data = data + "," + format_value_bs(total_bw.first);
@@ -1212,10 +1211,8 @@ void Layer::issue_forward_pass_comm(SchedulingPolicy pref_scheduling, Collective
     else if (fwd_pass_comm_type == ComType::None)
     {
         collective_counter--;
-        if (generator->id == 0)
-        {
-            std::cout << "info: no forward pass collective for layer: " << id << std::endl;
-        }
+        // if (generator->id == 0)
+        // std::cout << "info: no forward pass collective for layer: " << id << std::endl;
         if (barrier == CollectiveBarrier::Blocking)
         {
             workload->call(EventType::General, NULL);
@@ -1368,10 +1365,8 @@ void Layer::issue_input_grad_comm(SchedulingPolicy pref_scheduling, CollectiveBa
     else if (input_grad_comm_type == ComType::None)
     {
         collective_counter--;
-        if (generator->id == 0)
-        {
-            std::cout << "info: no input grad collective for layer: " << id << std::endl;
-        }
+        // if (generator->id == 0)
+        //     std::cout << "info: no input grad collective for layer: " << id << std::endl;
         if (barrier == CollectiveBarrier::Blocking)
         {
             workload->call(EventType::General, NULL);
@@ -1436,8 +1431,8 @@ void Layer::issue_weight_grad_comm(SchedulingPolicy pref_scheduling, CollectiveB
         }
         if (generator->id == 0)
         {
-            std::cout << "info: all-reduce weight grad collective issued for layer: " << id << " with size: " << weight_grad_comm_size << ",";
-            print_involved_dimensions(weight_grad_comm_involved_dimensions); // 10维都是true
+            // std::cout << "info: all-reduce weight grad collective issued for layer: " << id << " with size: " << weight_grad_comm_size << ",";
+            // print_involved_dimensions(weight_grad_comm_involved_dimensions); // 10维都是true
         }
     }
     else if (weight_grad_comm_type == ComType::All_to_All)

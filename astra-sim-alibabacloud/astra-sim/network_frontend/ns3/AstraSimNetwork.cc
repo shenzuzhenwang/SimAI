@@ -350,19 +350,19 @@ int main(int argc, char *argv[])
         DPU_NVswitchs.push_back(i);
     }
 
-    printf("NVSW:[");
-    for (auto nvsw : NVswitchs)
-        cout << nvsw << " ";
-    cout << "]" << endl;
+    // printf("NVSW:[");
+    // for (auto nvsw : NVswitchs)
+    //     cout << nvsw << " ";
+    // cout << "]" << endl;
 
     printf("DPUS:[");
     for (auto dpu : g_Dpus)
         cout << dpu << " ";
     cout << "]" << endl;
-    printf("DPU_NVSW:[");
-    for (auto dpunvsw : DPU_NVswitchs)
-        cout << dpunvsw << " ";
-    cout << "]" << endl;
+    // printf("DPU_NVSW:[");
+    // for (auto dpunvsw : DPU_NVswitchs)
+    //     cout << dpunvsw << " ";
+    // cout << "]" << endl;
 
     g_dpu_per_switch = dpu_num / switch_num;
     LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO);

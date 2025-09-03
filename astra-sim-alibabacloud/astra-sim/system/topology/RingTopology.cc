@@ -18,12 +18,11 @@ RingTopology::RingTopology(Dimension dimension, int id, int total_nodes_in_ring,
     {
         name = "horizontal";
     }
-    if (id == 0)
-    {
-        std::cout << "ring of node 0, "
-                  << "id: " << id << " dimension: " << name << " total nodes in ring: " << total_nodes_in_ring << " index in ring: " << index_in_ring
-                  << " offset: " << offset << "total nodes in ring: " << total_nodes_in_ring << std::endl;
-    }
+    // if (id == 0)
+    //     std::cout << "ring of node 0, "
+    //               << "id: " << id << " dimension: " << name << " total nodes in ring: " << total_nodes_in_ring << " index in ring: " <<
+    //               index_in_ring
+    //               << " offset: " << offset << "total nodes in ring: " << total_nodes_in_ring << std::endl;
     this->id = id;
     this->total_nodes_in_ring = total_nodes_in_ring;
     this->index_in_ring = index_in_ring;

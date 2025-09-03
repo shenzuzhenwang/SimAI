@@ -1300,7 +1300,7 @@ void SetupNetwork(void (*qp_finish)(FILE *, Ptr<RdmaQueuePair>), void (*send_fin
                 maxRtt = rtt;
         }
     }
-    printf("maxRtt=%lu maxBdp=%lu\n", maxRtt, maxBdp);
+    // printf("maxRtt=%lu maxBdp=%lu\n", maxRtt, maxBdp);
 
     for (uint32_t i = 0; i < node_num; i++)
     {

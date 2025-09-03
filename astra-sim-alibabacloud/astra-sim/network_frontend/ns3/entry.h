@@ -357,8 +357,8 @@ void qp_finish(FILE *fout, Ptr<RdmaQueuePair> q)
         MtpInterface::explicitCriticalSection cs;
 #endif
         finshedNum++;
-        if (finshedNum % 100 == 1)
-            printf("%d/8064 (%f) qp finished\n", finshedNum, finshedNum / 80.64);
+        // if (finshedNum % 100 == 1)
+        //     printf("%d/8064 (%f) qp finished\n", finshedNum, finshedNum / 80.64);
         Ptr<Node> dstNode = n.Get(did);
         Ptr<RdmaDriver> rdma = dstNode->GetObject<RdmaDriver>();
         rdma->m_rdma->DeleteRxQp(q->sip.Get(), q->m_pg, q->sport);
@@ -433,7 +433,7 @@ int main1(string network_topo, string network_conf)
     SetConfig();
     SetupNetwork(qp_finish, send_finish);
 
-    std::cout << "Running Simulation.\n";
+    // std::cout << "Running Simulation.\n";
     fflush(stdout);
     NS_LOG_INFO("Run Simulation.");
     // PHY_MTP is NOT defined
@@ -442,7 +442,7 @@ int main1(string network_topo, string network_conf)
 
     endt = clock();
     double duration = (double)(endt - begint) / CLOCKS_PER_SEC;
-    std::cout << "Simulation time: " << duration << " seconds\n";
+    // std::cout << "Simulation time: " << duration << " seconds\n";
     return 0;
 }
 #endif

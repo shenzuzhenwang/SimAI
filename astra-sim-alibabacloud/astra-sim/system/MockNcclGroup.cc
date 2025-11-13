@@ -1084,8 +1084,6 @@ FlowModels MockNcclGroup::genAllReduceMultiDpuFlowModels(GroupInfo gp_info, uint
     int num_gpus = gp_info.nRanks; // GPU数
     int num_dpus = dpus.size();    // DPU数
     uint64_t agg_grain = data_size / num_dpus / 2;
-    // num_dpus *2=0.8462 | num_dpus *4=0.706 | *8=0.6362 | *16=0.6012 *64=0.5840 *1024=0.5673 *2048=0.5668 *4096=0.5665 理论下限 0.56
-    // 极限性能可以更改agg_grain的大小，可以直接指定，也可以更改最后的数字（目前意思是模型数据大小先根据dpu数量分片，然后再按最后一个数字分片）
     uint64_t num_chunks = (data_size + agg_grain - 1) / agg_grain; // 总共要处理多少个 chunk（向上取整）
     FlowModels result = {};
 
